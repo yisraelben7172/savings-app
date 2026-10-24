@@ -13,7 +13,8 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - `web/` = website (Next.js 16 with Cache Components, App Router, Tailwind 4, TypeScript, lucide-react). Deployed on Vercel with Root Directory = `web`. Run locally with `npm run dev` in web/ (port 3001; API uses 3000).
 - Start the API with start-api.bat; it first stops anything still holding port 3000 (the usual cause of the "port 3000 in use" error).
 - `mobile/` (not created yet) = Expo React Native app; Android APK via EAS cloud build.
-- Backend hosting planned on Render (US region); Cloudflare for domain/DNS. Domain not chosen yet (e.g. getvault.app).
+- Backend hosting: Render, defined in render.yaml (service `vault-api` + Postgres `vault-db`, region virginia, both on free plans for now). Auto-deploys on every push to main. On start it runs migrations, loads demo deals while SEED_DEMO_DATA=true (seed is upsert-only, safe to re-run), then starts. Free web service sleeps after 15 min (first visit takes ~1 min); free Postgres expires after 30 days, so upgrade both before launch.
+- Cloudflare for domain/DNS. Domain not chosen yet (e.g. getvault.app).
 
 ## Backend (done)
 - Models: Category, Merchant (trustScore, approved, domain), Deal (bestPrice, discountPct, goldOnly, goldEarlyUntil), Offer (one per store), Click, PriceHistory, User (tier FREE/GOLD), SavedDeal, Alert, ChatSession/ChatMessage. Demo data in prisma/seed.ts.
@@ -42,7 +43,7 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - For now: saved deals live in the browser (localStorage) until accounts exist. Sign-in buttons are shown but disabled ("coming soon"). "Start Gold" goes to /signin until Stripe is added. Price alerts show a "coming soon" panel.
 
 ## Next steps
-1. Deploy backend to Render (render.yaml blueprint) and set NEXT_PUBLIC_API_URL in Vercel. Until then the live Vercel site shows "Deals are taking a break" because it can't reach the local API.
+1. Owner creates the Render Blueprint from this repo, then sets NEXT_PUBLIC_API_URL=https://<vault-api URL from Render> in Vercel (Production + Preview) and redeploys. Until then the live Vercel site shows "Deals are taking a break". Before public launch: set SEED_DEMO_DATA=false (demo prices are examples) and upgrade the free plans.
 2. Expo app in mobile/, Android APK via EAS.
 3. Auth, Stripe for Gold, real partner feeds (eBay Deal API, Ticketmaster Discovery, Travelpayouts), Google Safe Browsing link checks.
 

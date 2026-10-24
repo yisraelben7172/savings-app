@@ -1,0 +1,39 @@
+# Render blueprint: the Vault API + its Postgres database (US East, next to Vercel's default region).
+# In Render: New > Blueprint > pick this repo. Render reads this file and creates both.
+services:
+  - type: web
+    name: vault-api
+    runtime: node
+    region: virginia
+    plan: free # sleeps after 15 min idle; switch to "starter" for always-on
+    branch: main
+    autoDeploy: true # every push to main redeploys
+    buildCommand: npm ci && npx prisma generate && npm run build
+    # Apply database migrations, load demo deals while SEED_DEMO_DATA is "true", then start.
+    startCommand: npx prisma migrate deploy && if [ "$SEED_DEMO_DATA" = "true" ]; then npx prisma db seed; fi && node dist/main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vault-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: https://*.vercel.app
+      - key: SEED_DEMO_DATA
+        value: "true" # set to "false" once real partner feeds are live
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5
+      # Secrets: Render asks for these when the blueprint is created (leave blank to skip for now).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AMAZON_ASSOCIATE_TAG
+        sync: false
+
+databases:
+  - name: vault-db
+    region: virginia
+    plan: free # free Postgres expires after 30 days; upgrade to "basic-256mb" before launch
+    databaseName: sales_app
+    user: sales
