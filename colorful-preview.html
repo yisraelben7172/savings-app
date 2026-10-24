@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colorful style preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#FFFFFF;
+  --mist:#F0F3F8;     /* soft sections, tiles */
+  --line:#E1E6EE;
+  --ink:#141B2D;      /* text */
+  --muted:#5E6779;
+  --cobalt:#2F55E4;   /* actions */
+  --save:#0E8A5F;     /* money saved + verified */
+  --sky:#DCEBFF; --sky-d:#2F55E4;
+  --peach:#FFE3D3; --peach-d:#D9531E;
+  --mint:#D3F2E2; --mint-d:#0E8A5F;
+  --lilac:#E9E0FF; --lilac-d:#6B46D6;
+  --butter:#FFF0BF; --butter-d:#A36A00;
+  --rose:#FFDDE6; --rose-d:#C42D5C;
+  --blush:#FCE1F3; --blush-d:#B52F86;
+  --teal:#D2F1F4; --teal-d:#0B7A87;
+  --gold:#F6C64E; --gold-l:#FFF4D6; --gold-d:#8A5A00;
+  --hot:#FF5B45;
+  --display:"Schibsted Grotesk", system-ui, sans-serif;
+  --body:"Figtree", system-ui, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);color:var(--ink);font:400 16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0}
+.logo{font:800 22px/1 var(--display);letter-spacing:-.02em;display:flex;align-items:center;gap:9px}
+.logo i{width:24px;height:24px;border-radius:8px;background:var(--cobalt);display:inline-grid;place-items:center}
+.logo i::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff}
+.navlinks{display:flex;gap:28px;color:var(--muted);font-size:15px}
+.navlinks a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:12px 20px;font:600 15px/1 var(--body);border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+
+/* hero: search-first, the memorable thing */
+.hero{position:relative;overflow:hidden;background:#EAF1FF;border-radius:32px;padding:72px 56px 104px;margin-top:8px;text-align:center}
+.hero>*{position:relative;z-index:1}
+.blob{position:absolute;border-radius:50%;z-index:0}
+.b1{width:420px;height:420px;background:var(--peach);left:-140px;top:-160px}
+.b2{width:360px;height:360px;background:var(--lilac);right:-120px;top:-60px}
+.b3{width:300px;height:300px;background:var(--mint);right:18%;bottom:-200px}
+.b4{width:220px;height:220px;background:var(--butter);left:12%;bottom:-150px}
+.float{position:absolute;z-index:1;background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 10px 28px -14px rgba(20,27,45,.35);text-align:left;width:164px}
+.float .k{font-size:12px;color:var(--muted)}
+.float .v{font:800 22px/1.1 var(--display);margin-top:2px}
+.float .v s{font:400 13px var(--body);color:var(--muted);margin-left:6px}
+.float .sw{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;margin-bottom:8px}
+.float .sw svg{width:16px;height:16px}
+.f1{left:28px;top:150px;transform:rotate(-6deg)}
+.f2{right:28px;top:120px;transform:rotate(5deg)}
+.f3{left:28px;bottom:20px;transform:rotate(4deg)}
+.f4{right:28px;bottom:24px;transform:rotate(-4deg)}
+@media (prefers-reduced-motion:no-preference){
+ .float{animation:pop .7s cubic-bezier(.2,.9,.3,1.3) both}
+ .f2{animation-delay:.12s}.f3{animation-delay:.24s}.f4{animation-delay:.36s}
+ @keyframes pop{from{opacity:0;translate:0 18px;scale:.9}to{opacity:1;translate:0 0;scale:1}}
+}
+@media (max-width:1240px){.float{display:none}}
+h1{font:800 clamp(40px,5.6vw,72px)/1 var(--display);letter-spacing:-.035em;max-width:16ch;margin:0 auto}
+.lede{color:var(--muted);font-size:19px;max-width:48ch;margin:18px auto 36px}
+.search{background:#fff;border-radius:22px;box-shadow:0 1px 2px rgba(20,27,45,.06),0 12px 32px -12px rgba(20,27,45,.18);max-width:860px;margin:0 auto;text-align:left;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:10px 10px 0;border-bottom:1px solid var(--line)}
+.tab{padding:12px 18px;font-weight:600;font-size:15px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.on{color:var(--ink);border-color:var(--cobalt)}
+.fields{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:0;align-items:stretch}
+.field{padding:16px 20px;border-right:1px solid var(--line)}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.field input{border:0;font:500 16px var(--body);color:var(--ink);width:100%;background:none}
+.field input:focus{outline:none}
+.fields .go{padding:12px}
+.fields .go .btn{height:100%;padding:0 28px;border-radius:14px}
+.assist{display:flex;align-items:center;gap:10px;padding:14px 20px;background:#FAFBFD;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.assist b{color:var(--ink);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--save);flex:none}
+.trust{display:flex;justify-content:center;gap:28px;margin-top:28px;color:var(--muted);font-size:14px;flex-wrap:wrap}
+.trust span{display:inline-flex;align-items:center;gap:8px}
+
+/* one-line search */
+.omni{display:flex;align-items:center;gap:12px;background:#fff;border-radius:999px;padding:10px 10px 10px 24px;max-width:720px;margin:0 auto;box-shadow:0 1px 2px rgba(20,27,45,.06),0 16px 36px -16px rgba(47,85,228,.45);border:2px solid transparent;transition:border-color .15s}
+.omni:focus-within{border-color:var(--cobalt)}
+.omni .spark{width:22px;height:22px;color:var(--lilac-d);flex:none}
+.omni input{flex:1;border:0;background:none;font:500 17px var(--body);color:var(--ink);min-width:0;padding:10px 0}
+.omni input::placeholder{color:#7A8295}
+.omni input:focus{outline:none}
+.omni .btn{border-radius:999px;padding:14px 26px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.quick{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:22px auto 0;max-width:900px}
+.quick a{padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;color:var(--ink);transition:translate .15s}
+.quick a:hover{translate:0 -2px}
+@media (max-width:600px){.omni{border-radius:22px;flex-wrap:wrap;padding:12px}.omni .btn{width:100%}}
+/* chat widget */
+.chat-fab{position:fixed;right:24px;bottom:24px;z-index:50;display:flex;align-items:center;gap:10px;background:var(--cobalt);color:#fff;border:0;border-radius:999px;padding:14px 20px 14px 16px;font:600 15px var(--body);cursor:pointer;box-shadow:0 14px 30px -12px rgba(47,85,228,.7)}
+.chat-fab svg{width:22px;height:22px}
+.chat-fab[aria-expanded="true"]{display:none}
+.chat{position:fixed;right:24px;bottom:24px;z-index:60;width:380px;max-width:calc(100vw - 32px);height:600px;max-height:calc(100vh - 48px);background:#fff;border-radius:24px;box-shadow:0 30px 60px -20px rgba(20,27,45,.45),0 0 0 1px var(--line);display:none;flex-direction:column;overflow:hidden}
+.chat.open{display:flex}
+@media (prefers-reduced-motion:no-preference){.chat.open{animation:rise .22s cubic-bezier(.2,.9,.3,1.1)}@keyframes rise{from{opacity:0;translate:0 16px}to{opacity:1;translate:0 0}}}
+.chat-head{display:flex;align-items:center;gap:12px;padding:16px 16px 14px 18px;background:linear-gradient(0deg,#fff,#fff);border-bottom:1px solid var(--line)}
+.chat-head .av{width:38px;height:38px;border-radius:12px;background:var(--lilac);display:grid;place-items:center;color:var(--lilac-d)}
+.chat-head .av svg{width:20px;height:20px}
+.chat-head b{display:block;font:700 16px/1.2 var(--display)}
+.chat-head small{color:var(--save);font-size:12px;display:flex;align-items:center;gap:6px}
+.chat-head .x{margin-left:auto;width:36px;height:36px;border-radius:10px;border:0;background:var(--mist);cursor:pointer;font-size:18px;color:var(--muted)}
+.chat-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#FBFCFE}
+.chat-log .msg{margin:0}
+.chat-log .me{margin-left:auto}
+.chat-log .pick{background:#fff;margin:0}
+.chat-log .pick a.go{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:var(--cobalt)}
+.typing{display:flex;gap:4px;padding:14px;background:var(--lilac);border-radius:18px;border-bottom-left-radius:6px;width:max-content}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--lilac-d);opacity:.4;animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:1}}
+.suggest{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 12px;background:#FBFCFE}
+.suggest button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font:500 13px var(--body);color:var(--ink);cursor:pointer}
+.chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.chat-form input{flex:1;border:1px solid var(--line);border-radius:999px;padding:12px 16px;font:400 15px var(--body);min-width:0}
+.chat-form input:focus{outline:2px solid var(--cobalt);outline-offset:0;border-color:transparent}
+.chat-form button{width:46px;border-radius:999px;border:0;background:var(--cobalt);color:#fff;cursor:pointer;display:grid;place-items:center}
+.chat-form button svg{width:18px;height:18px}
+.disclose{font-size:11px;color:var(--muted);text-align:center;padding:0 12px 10px}
+/* store picker */
+[data-deal]{cursor:pointer}
+.deal:hover h4{text-decoration:underline;text-underline-offset:3px}
+.scrim{position:fixed;inset:0;background:rgba(20,27,45,.45);z-index:80;display:none;align-items:center;justify-content:center;padding:16px}
+.scrim.open{display:flex}
+.sheet{background:#fff;border-radius:24px;width:100%;max-width:500px;max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 30px 70px -20px rgba(20,27,45,.5)}
+@media (prefers-reduced-motion:no-preference){.scrim.open .sheet{animation:rise .22s cubic-bezier(.2,.9,.3,1.1)}}
+.sh-head{display:flex;gap:14px;align-items:flex-start;padding:22px 22px 16px}
+.sh-ico{width:52px;height:52px;border-radius:14px;flex:none;display:grid;place-items:center;font:800 20px var(--display)}
+.sh-head h3{font:700 19px/1.25 var(--display)}
+.sh-head p{color:var(--muted);font-size:14px;margin-top:4px}
+.sh-head .x{margin-left:auto;width:36px;height:36px;border-radius:10px;border:0;background:var(--mist);cursor:pointer;font-size:18px;color:var(--muted);flex:none}
+.sh-sort{display:flex;gap:8px;padding:0 22px 12px}
+.sh-sort button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font:600 13px var(--body);color:var(--muted);cursor:pointer}
+.sh-sort button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.stores{list-style:none;padding:0 14px 8px}
+.store-row{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:14px 10px;border-top:1px solid var(--line)}
+.store-row:first-child{border-top:0}
+.store-row.best{background:#F1FBF6;border-radius:16px;border-top-color:transparent}
+.store-row.best + .store-row{border-top-color:transparent}
+.logo-l{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font:800 15px var(--display)}
+.st-name{font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.best-tag{background:var(--save);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.st-meta{font-size:13px;color:var(--muted);margin-top:2px}
+.st-meta .ver{font-size:12px}
+.st-right{text-align:right}
+.st-price{font:800 22px/1 var(--display)}
+.st-price small{display:block;font:500 12px var(--body);color:var(--muted);margin-top:4px}
+.st-go{margin-top:8px;padding:9px 14px;font-size:13px;border-radius:10px}
+.sh-foot{padding:12px 22px 20px;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
+@media (max-width:600px){.scrim{align-items:flex-end;padding:0}.sheet{border-radius:24px 24px 0 0;max-height:88vh}}
+/* deals */
+.row-head{display:flex;justify-content:space-between;align-items:baseline;margin:64px 0 20px}
+h2{font:700 30px/1.1 var(--display);letter-spacing:-.02em}
+.row-head a{color:var(--cobalt);font-weight:600;font-size:15px}
+.deals{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.deal .tile{aspect-ratio:4/3;border-radius:20px;background:var(--mist);display:grid;place-items:center;position:relative}
+.deal .tile svg{width:68px;height:68px}
+.t-sky{background:var(--sky)!important}.t-sky svg{stroke:var(--sky-d)}
+.t-peach{background:var(--peach)!important}.t-peach svg{stroke:var(--peach-d)}
+.t-lilac{background:var(--lilac)!important}.t-lilac svg{stroke:var(--lilac-d)}
+.t-mint{background:var(--mint)!important}.t-blush{background:var(--blush)!important}.t-blush svg{stroke:var(--blush-d)}.t-mint svg{stroke:var(--mint-d)}
+.tag.hot{background:var(--hot);color:#fff}
+.tag{position:absolute;top:12px;left:12px;background:#fff;color:var(--save);font-weight:700;font-size:13px;padding:5px 10px;border-radius:999px}
+.deal .store{display:flex;align-items:center;gap:6px;margin-top:14px;color:var(--muted);font-size:13px}
+.deal h4{font:500 17px/1.3 var(--body);margin:6px 0 10px;min-height:44px}
+.price{display:flex;align-items:baseline;gap:10px}
+.price b{font:800 28px/1 var(--display);letter-spacing:-.02em}
+.price s{color:var(--muted)}
+
+/* categories */
+.cats{display:grid;grid-template-columns:repeat(8,1fr);gap:12px;margin-top:20px}
+.cat{border-radius:18px;padding:20px 18px;font-weight:600;transition:translate .15s}
+.cat:hover{translate:0 -2px}
+.cat small{display:block;color:#3D4557;font-weight:400;font-size:13px;margin-top:2px}
+
+/* gold */
+.gold-link{color:var(--gold-d)!important;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.gold-link::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--gold)}
+.gtag{position:absolute;top:12px;right:12px;background:var(--gold);color:#3B2600;font-weight:700;font-size:12px;padding:5px 10px;border-radius:999px}
+.gold-sec{margin-top:80px;display:grid;grid-template-columns:1fr;gap:32px}
+.gold-intro{text-align:center}
+.gold-intro h2{font-size:40px;line-height:1.05}
+.gold-intro p{color:var(--muted);font-size:18px;margin:14px auto 0;max-width:52ch}
+.plans{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;max-width:860px;width:100%;margin:0 auto}
+.plan{border:1px solid var(--line);border-radius:24px;padding:26px;display:flex;flex-direction:column}
+.plan h3{font:700 20px var(--display)}
+.plan .amt{font:800 44px/1 var(--display);letter-spacing:-.03em;margin:14px 0 4px}
+.plan .amt small{font:500 16px var(--body);color:var(--muted);letter-spacing:0}
+.plan .sub{color:var(--muted);font-size:14px;min-height:20px}
+.plan ul{list-style:none;margin:20px 0 24px;display:grid;gap:12px;font-size:15px}
+.plan li{display:flex;gap:10px;align-items:flex-start}
+.plan li svg{width:18px;height:18px;flex:none;margin-top:2px}
+.plan .btn{margin-top:auto;width:100%;padding:15px}
+.plan.free li svg{stroke:var(--muted)}
+.plan.gold{background:linear-gradient(160deg,#FFF7DF 0%,#FFE7A6 100%);border:2px solid var(--gold);position:relative}
+.plan.gold li svg{stroke:var(--gold-d)}
+.plan.gold .pop{position:absolute;top:-13px;left:24px;background:#2A1C00;color:var(--gold);font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px}
+.btn.goldbtn{background:#2A1C00;color:#FFE08A;border-color:#2A1C00}
+.plan .fine{font-size:12px;color:#6B5A2E;text-align:center;margin-top:10px}
+.bill{display:inline-flex;gap:4px;background:var(--mist);border-radius:999px;padding:4px;margin-top:22px}
+.bill button{border:0;background:none;border-radius:999px;padding:10px 18px;font:600 15px var(--body);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.bill button[aria-checked="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(20,27,45,.12)}
+.bill .save{background:var(--gold);color:#3B2600;font-size:12px;padding:3px 8px;border-radius:999px}
+@media (max-width:960px){.gold-sec{grid-template-columns:1fr}.plans{grid-template-columns:1fr}}
+/* assistant band */
+.band{margin-top:72px;background:var(--cobalt);color:#fff;border-radius:28px;padding:44px 48px;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center}
+.band h2{color:#fff}
+.band p{color:#D6E0FF;margin-top:12px;max-width:42ch}
+.asks{display:flex;flex-wrap:wrap;gap:10px}
+.asks span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:10px 14px;border-radius:999px;font-size:14px}
+@media (max-width:860px){.band{grid-template-columns:1fr;padding:32px 24px}}
+/* phones */
+.phones-sec{background:#FFF6EE;margin-top:88px;padding:72px 0 96px}
+.note{color:var(--muted);font-size:15px;max-width:60ch;margin-top:10px}
+.phones{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.phone{width:320px;height:660px;border-radius:44px;background:#fff;border:10px solid var(--ink);overflow:hidden;display:flex;flex-direction:column}
+.sb{display:flex;justify-content:space-between;padding:14px 22px 6px;font-size:12px;color:var(--muted)}
+.ph-body{padding:8px 18px;flex:1;overflow:hidden}
+.ph-title{font:800 26px/1 var(--display);letter-spacing:-.03em;margin:8px 0 14px}
+.ph-search{background:var(--mist);border-radius:14px;padding:11px 14px;font-size:14px;color:var(--muted);margin-bottom:14px}
+.chips{display:flex;gap:8px;margin-bottom:16px;overflow:hidden}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);white-space:nowrap}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.feature{border-radius:20px;background:var(--peach);padding:16px;margin-bottom:12px;position:relative}
+.feature .tag{position:static;display:inline-block;margin-bottom:10px}
+.feature h5{font:700 17px/1.25 var(--display);margin-bottom:10px}
+.feature .big{font:800 40px/1 var(--display);letter-spacing:-.03em}
+.feature .sm{color:var(--muted);font-size:13px;margin-top:6px}
+.li{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.li .n{font-size:14px;font-weight:500}
+.li .s{font-size:12px;color:var(--muted)}
+.li .p{text-align:right;font:800 19px/1 var(--display)}
+.li .p small{display:block;font:600 11px/1.6 var(--body);color:var(--save)}
+.tabbar{display:flex;justify-content:space-around;padding:12px 0 22px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.tabbar .on{color:var(--cobalt);font-weight:600}
+.msg{max-width:82%;padding:11px 14px;border-radius:18px;font-size:14px;margin-bottom:10px}
+.me{margin-left:auto;background:var(--cobalt);color:#fff;border-bottom-right-radius:6px}
+.bot{background:var(--lilac);border-bottom-left-radius:6px}
+.pick{border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.pick .top{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.ver{color:var(--save);display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.pick .name{font-size:14px;font-weight:500;margin:6px 0}
+.pick .pp{display:flex;align-items:baseline;gap:8px}
+.pick .pp b{font:800 21px/1 var(--display)}
+.pick .pp s{color:var(--muted);font-size:13px}
+.pick .pp em{font-style:normal;color:var(--save);font-size:12px;font-weight:600}
+.composer{margin:10px 18px 0;background:var(--mist);border-radius:999px;padding:11px 16px;font-size:13px;color:var(--muted)}
+
+@media (max-width:1100px){.cats{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:960px){
+  .hero{padding:44px 20px 36px}
+  .fields{grid-template-columns:1fr}
+  .field{border-right:0;border-bottom:1px solid var(--line)}
+  .deals{grid-template-columns:repeat(2,1fr)}
+  
+  .navlinks{display:none}
+}
+@media (max-width:520px){.deals{grid-template-columns:1fr}.cats{grid-template-columns:repeat(2,1fr)}.phone{width:100%;max-width:320px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a class="logo" href="#"><i></i>Vault</a>
+    <div class="navlinks"><a href="#">Shopping</a><a href="#">Travel</a><a href="#">Events</a><a href="#">Price alerts</a><a href="#gold" class="gold-link">Gold</a></div>
+    <div style="display:flex;gap:10px"><a class="btn" href="#">Sign in</a></div>
+  </nav>
+
+  <section class="hero">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>
+    <div class="float f1" data-deal="headphones"><div class="sw" style="background:var(--butter)"><svg viewBox="0 0 24 24" fill="none" stroke="#A36A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></div><div class="k">Headphones</div><div class="v">$198<s>$349</s></div></div>
+    <div class="float f2" data-deal="concert"><div class="sw" style="background:var(--lilac)"><svg viewBox="0 0 24 24" fill="none" stroke="#6B46D6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="k">Concert, floor seats</div><div class="v">$89<s>$145</s></div></div>
+    <div class="float f3" data-deal="overshirt"><div class="sw" style="background:var(--mint)"><svg viewBox="0 0 24 24" fill="none" stroke="#0E8A5F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3a4 4 0 0 1-8 0z"/></svg></div><div class="k">Merino overshirt</div><div class="v">$64<s>$128</s></div></div>
+    <div class="float f4" data-deal="flight"><div class="sw" style="background:var(--peach)"><svg viewBox="0 0 24 24" fill="none" stroke="#D9531E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></div><div class="k">Flight to Rome</div><div class="v">$412<s>$860</s></div></div>
+    <h1>Real deals from stores you can trust</h1>
+    <p class="lede">Price drops, flash sales and last-minute fares, checked and collected in one place.</p>
+
+    <form class="omni" role="search" onsubmit="return false">
+      <svg class="spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+      <label class="sr" for="q">Search deals or ask the assistant</label>
+      <input id="q" placeholder="What are you looking for? Try &quot;running shoes under $80&quot;">
+      <button class="btn primary" type="submit">Find deals</button>
+    </form>
+    <div class="quick" aria-label="Popular right now">
+      <a href="#" style="background:var(--sky)">Headphones</a>
+      <a href="#" style="background:var(--mint)">Sneakers</a>
+      <a href="#" style="background:var(--blush)">Beauty</a>
+      <a href="#" style="background:var(--rose)">Concerts this weekend</a>
+      <a href="#" style="background:var(--teal)">Car rentals</a>
+      <a href="#" style="background:var(--lilac)">Gifts under $50</a>
+    </div>
+
+    <div class="trust">
+      <span><span class="dot"></span>Every store checked before it appears</span>
+      <span><span class="dot"></span>Prices refreshed every hour</span>
+      <span><span class="dot"></span>Free to use</span>
+    </div>
+  </section>
+
+  <div class="row-head"><h2>Dropped today</h2><a href="#">See all deals</a></div>
+  <section class="deals">
+    <div class="deal" data-deal="headphones" tabindex="0" role="button">
+      <div class="tile t-sky"><span class="tag">43% off</span><span class="gtag">Gold early access</span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></div>
+      <div class="store"><span class="ver"><span class="dot"></span>Verified</span> · Electronics</div>
+      <h4>Noise-cancelling headphones, 30-hour battery</h4>
+      <div class="price"><b>$198</b><s>$349</s></div>
+    </div>
+    <div class="deal" data-deal="serum" tabindex="0" role="button">
+      <div class="tile t-blush"><span class="tag">40% off</span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="9" width="8" height="12" rx="2"/><path d="M10 9V6h4v3"/><path d="M11 3h2v3h-2z"/></svg></div>
+      <div class="store"><span class="ver"><span class="dot"></span>Verified</span> · Beauty</div>
+      <h4>Vitamin C brightening serum, 30 ml</h4>
+      <div class="price"><b>$21</b><s>$35</s></div>
+    </div>
+    <div class="deal" data-deal="concert" tabindex="0" role="button">
+      <div class="tile t-lilac"><span class="tag">39% off</span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 1 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/><path d="M14 5v14" stroke-dasharray="2 2"/></svg></div>
+      <div class="store"><span class="ver"><span class="dot"></span>Verified</span> · Concerts</div>
+      <h4>Floor seats, arena show, Saturday night</h4>
+      <div class="price"><b>$89</b><s>$145</s></div>
+    </div>
+    <div class="deal" data-deal="overshirt" tabindex="0" role="button">
+      <div class="tile t-mint"><span class="tag hot">Hot · 50% off</span><svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 6l2 4 2-1v12h8V9l2 1 2-4-4-3a4 4 0 0 1-8 0z"/></svg></div>
+      <div class="store"><span class="ver"><span class="dot"></span>Verified</span> · Clothing</div>
+      <h4>Merino wool overshirt, all sizes</h4>
+      <div class="price"><b>$64</b><s>$128</s></div>
+    </div>
+  </section>
+
+  <div class="row-head"><h2>Browse by category</h2></div>
+  <section class="cats" style="margin-top:0">
+    <a class="cat" style="background:var(--sky)" href="#">Electronics<small>1,240 deals</small></a>
+    <a class="cat" style="background:var(--mint)" href="#">Clothing<small>3,018 deals</small></a>
+    <a class="cat" style="background:var(--blush)" href="#">Beauty<small>1,964 deals</small></a>
+    <a class="cat" style="background:var(--peach)" href="#">Hotels<small>860 deals</small></a>
+    <a class="cat" style="background:var(--teal)" href="#">Car rentals<small>534 deals</small></a>
+    <a class="cat" style="background:var(--rose)" href="#">Concerts<small>296 deals</small></a>
+    <a class="cat" style="background:var(--butter)" href="#">Home<small>1,577 deals</small></a>
+    <a class="cat" style="background:var(--lilac)" href="#">Flights<small>412 deals</small></a>
+  </section>
+</div>
+
+<section class="wrap gold-sec" id="gold">
+  <div class="gold-intro">
+    <h2>Get the best deals first with Gold</h2>
+    <p>Gold members see new deals 24 hours before everyone else, unlock Gold-only prices, and get alerts the moment a price drops.</p>
+    <div class="bill" role="radiogroup" aria-label="Billing period">
+      <button type="button" role="radio" aria-checked="true" data-b="m">Monthly</button>
+      <button type="button" role="radio" aria-checked="false" data-b="y">Yearly <span class="save">Save $60</span></button>
+    </div>
+  </div>
+  <div class="plans">
+    <div class="plan free">
+      <h3>Free</h3>
+      <div class="amt">$0</div>
+      <div class="sub">Always free</div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>All public deals</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>20 AI assistant chats a day</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Daily deal alerts</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>Save up to 10 deals</li>
+      </ul>
+      <a class="btn" href="#">Create free account</a>
+    </div>
+    <div class="plan gold">
+      <span class="pop">Best value</span>
+      <h3>Gold</h3>
+      <div class="amt" id="gAmt">$14.99<small> / month</small></div>
+      <div class="sub" id="gSub">Cancel anytime</div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Early access:</b> new deals 24 hours before free members</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Gold-only deals</b> and deeper discounts</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Instant price-drop alerts</b> on anything you watch</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span><b>Unlimited AI assistant</b> with smarter comparisons</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Unlimited saved deals and price watches</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>No ads</span></li>
+      </ul>
+      <a class="btn goldbtn" href="#">Start Gold</a>
+      <div class="fine" id="gFine">Billed monthly. Cancel in two taps from your account.</div>
+    </div>
+  </div>
+</section>
+<section class="wrap"><div class="band">
+  <div><h2>Tell it what you need. It finds the deal.</h2><p>Our AI assistant searches every verified store at once and only shows deals that pass our checks.</p></div>
+  <div class="asks"><span>"Running shoes under $70, wide fit"</span><span>"Moisturizer for dry skin under $30"</span><span>"SUV rental in Orlando, Dec 20 to 27"</span><span>"Kids' birthday gift ideas under $40"</span><span>"Last-minute concert tickets this weekend"</span></div>
+</div></section>
+<section class="phones-sec">
+  <div class="wrap">
+    <h2>The same look on Android and iPhone</h2>
+    <p class="note">Left: the home feed. Right: the AI deal assistant, which only recommends stores that pass our checks.</p>
+    <div class="phones">
+      <div class="phone" aria-label="App home feed">
+        <div class="sb"><span>9:41</span><span>5G</span></div>
+        <div class="ph-body">
+          <div class="ph-title" style="display:flex;justify-content:space-between;align-items:center">Good morning<span style="font:700 11px var(--body);background:var(--gold);color:#3B2600;padding:5px 10px;border-radius:999px">Gold</span></div>
+          <div class="ph-search">Search deals or ask the assistant</div>
+          <div class="chips"><span class="chip on">For you</span><span class="chip">Beauty</span><span class="chip">Shopping</span><span class="chip">Car rentals</span><span class="chip">Travel</span><span class="chip">Events</span></div>
+          <div class="feature" data-deal="headphones">
+            <span class="tag hot">43% off</span>
+            <h5>Noise-cancelling headphones, 30-hour battery</h5>
+            <div class="big">$198</div>
+            <div class="sm"><s>$349</s>, lowest price in 90 days</div>
+          </div>
+          <div class="li" data-deal="shoes1"><div><div class="n">Running shoes, men's</div><div class="s">Clothing</div></div><div class="p">$58<small>48% off</small></div></div>
+          <div class="li" data-deal="serum"><div><div class="n">Vitamin C serum, 30 ml</div><div class="s">Beauty</div></div><div class="p">$21<small>40% off</small></div></div>
+        </div>
+        <div class="tabbar"><span class="on">Deals</span><span>Search</span><span>Assistant</span><span>Saved</span><span>Profile</span></div>
+      </div>
+
+      <div class="phone" aria-label="AI deal assistant chat">
+        <div class="sb"><span>9:41</span><span>5G</span></div>
+        <div class="ph-body">
+          <div class="ph-title">Assistant</div>
+          <div class="msg me">Need a carry-on suitcase under $120, something that lasts</div>
+          <div class="msg bot">Here are 2 deals from verified stores. Both have free returns.</div>
+          <div class="pick" data-deal="carryon1">
+            <div class="top"><span class="ver"><span class="dot"></span>Verified store</span><span>4.7 stars</span></div>
+            <div class="name">Hardshell carry-on, lifetime warranty</div>
+            <div class="pp"><b>$109</b><s>$185</s><em>Save $76</em></div>
+          </div>
+          <div class="pick" data-deal="carryon2">
+            <div class="top"><span class="ver"><span class="dot"></span>Verified store</span><span>4.6 stars</span></div>
+            <div class="name">Softside carry-on, expandable</div>
+            <div class="pp"><b>$84</b><s>$140</s><em>Save $56</em></div>
+          </div>
+        </div>
+        <div class="composer">Ask for a deal…</div>
+        <div class="tabbar"><span>Deals</span><span>Search</span><span class="on">Assistant</span><span>Saved</span><span>Profile</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<button class="chat-fab" id="fab" aria-expanded="false" aria-controls="chat">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+  Ask the deal assistant
+</button>
+<section class="chat" id="chat" role="dialog" aria-label="Deal assistant">
+  <div class="chat-head">
+    <div class="av"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg></div>
+    <div><b>Deal assistant</b><small><span class="dot"></span>Only recommends verified stores</small></div>
+    <button class="x" id="close" aria-label="Close chat">×</button>
+  </div>
+  <div class="chat-log" id="log" aria-live="polite">
+    <div class="msg bot">Hi! Tell me what you're shopping for and your budget. I'll find the best deal from stores we've checked.</div>
+  </div>
+  <div class="suggest" id="sug">
+    <button type="button">Running shoes under $80</button>
+    <button type="button">Moisturizer for dry skin</button>
+    <button type="button">Headphones deal</button>
+    <button type="button">Car rental this weekend</button>
+  </div>
+  <form class="chat-form" id="form">
+    <label class="sr" for="cin">Message the deal assistant</label>
+    <input id="cin" placeholder="Ask for a deal…" autocomplete="off">
+    <button type="submit" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </form>
+  <div class="disclose">AI assistant. Prices can change at the store. We may earn a commission.</div>
+</section>
+<script>
+(()=>{
+const fab=document.getElementById('fab'),chat=document.getElementById('chat'),log=document.getElementById('log'),form=document.getElementById('form'),inp=document.getElementById('cin'),sug=document.getElementById('sug');
+const open=(q)=>{chat.classList.add('open');fab.setAttribute('aria-expanded','true');if(q){send(q)}else{inp.focus()}};
+const close=()=>{chat.classList.remove('open');fab.setAttribute('aria-expanded','false');fab.focus()};
+fab.onclick=()=>open();document.getElementById('close').onclick=close;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&chat.classList.contains('open'))close()});
+const D={
+ shoes:{t:"Here are the 2 best running shoe deals under $80 right now:",p:[["Men's road running shoes, cushioned","4.6 stars","$58","$112","Save $54","shoes1"],["Women's trail runners, waterproof","4.5 stars","$74","$130","Save $56","shoes2"]]},
+ beauty:{t:"For dry skin, these are on sale at verified beauty stores:",p:[["Ceramide moisturizing cream, 16 oz","4.8 stars","$14","$22","Save $8","cream"],["Hyaluronic acid serum, 30 ml","4.6 stars","$19","$32","Save $13","hyaluronic"]]},
+ audio:{t:"This one just hit its lowest price in 90 days:",p:[["Noise-cancelling headphones, 30-hour battery","4.7 stars","$198","$349","Save $151","headphones"]]},
+ car:{t:"Here are the best car rental deals I found from verified rental sites:",p:[["Midsize SUV, unlimited miles, free cancellation","4.5 stars","$39/day","$62/day","Save $161 a week","suv"],["Compact car, airport pickup","4.4 stars","$24/day","$41/day","Save $119 a week","compact"]]},
+ none:{t:"I couldn't find a trusted deal for that yet. Want me to alert you when one shows up?",p:[]}
+};
+const pick=q=>{q=q.toLowerCase();if(/shoe|sneaker|run/.test(q))return D.shoes;if(/skin|beauty|serum|moistur|makeup|cream/.test(q))return D.beauty;if(/headphone|earbud|audio|speaker/.test(q))return D.audio;if(/car|suv|rental|van/.test(q))return D.car;return D.none};
+const el=(h)=>{const d=document.createElement('div');d.innerHTML=h;return d.firstElementChild};
+const esc=t=>t.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function send(q){
+  q=q.trim();if(!q)return;sug.style.display='none';
+  log.append(el('<div class="msg me">'+esc(q)+'</div>'));
+  const ty=el('<div class="typing" aria-label="Assistant is typing"><i></i><i></i><i></i></div>');log.append(ty);log.scrollTop=log.scrollHeight;
+  setTimeout(()=>{ty.remove();const r=pick(q);log.append(el('<div class="msg bot">'+r.t+'</div>'));
+    r.p.forEach(([n,st,pr,was,sv,k])=>log.append(el('<div class="pick" data-deal="'+k+'"><div class="top"><span class="ver"><span class="dot"></span>Verified store</span><span>'+st+'</span></div><div class="name">'+n+'</div><div class="pp"><b>'+pr+'</b><s>'+was+'</s><em>'+sv+'</em></div><a class="go" href="#">Compare stores</a></div>')));
+    log.scrollTop=log.scrollHeight},900);
+}
+form.onsubmit=e=>{e.preventDefault();send(inp.value);inp.value=''};
+sug.querySelectorAll('button').forEach(b=>b.onclick=()=>send(b.textContent));
+document.querySelector('.omni').onsubmit=e=>{e.preventDefault();open(document.getElementById('q').value||'Running shoes under $80')};
+document.querySelectorAll('.asks span').forEach(sp=>{sp.style.cursor='pointer';sp.setAttribute('role','button');sp.tabIndex=0;sp.onclick=()=>open(sp.textContent.replace(/"/g,''))});
+})();
+</script>
+<script>
+(()=>{const bs=document.querySelectorAll('.bill button'),a=document.getElementById('gAmt'),sb=document.getElementById('gSub'),f=document.getElementById('gFine');
+const P={m:['$14.99<small> / month</small>','Cancel anytime','Billed monthly. Cancel in two taps from your account.'],y:['$119<small> / year</small>','$9.92 a month, save $60 compared with monthly','Billed once a year. Cancel anytime; Gold stays on until your year ends.']};
+bs.forEach(b=>b.onclick=()=>{bs.forEach(x=>x.setAttribute('aria-checked',x===b));const v=P[b.dataset.b];a.innerHTML=v[0];sb.textContent=v[1];f.textContent=v[2]});})();
+</script>
+<div class="scrim" id="scrim">
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+    <div class="sh-head">
+      <div class="sh-ico" id="shIco"></div>
+      <div><h3 id="shTitle"></h3><p id="shSub"></p></div>
+      <button class="x" id="shClose" aria-label="Close">×</button>
+    </div>
+    <div class="sh-sort" role="group" aria-label="Sort stores">
+      <button type="button" aria-pressed="true" data-s="price">Lowest price</button>
+      <button type="button" aria-pressed="false" data-s="rating">Top rated</button>
+      <button type="button" aria-pressed="false" data-s="fast">Fastest</button>
+    </div>
+    <ul class="stores" id="shList"></ul>
+    <div class="sh-foot"><span class="dot" style="margin-top:4px"></span><span>Every store here passed our checks. Prices checked 12 minutes ago and can change at the store. We may earn a commission. Example prices for this preview.</span></div>
+  </section>
+</div>
+<script>
+(()=>{
+const C={sky:['var(--sky)','var(--sky-d)'],peach:['var(--peach)','var(--peach-d)'],lilac:['var(--lilac)','var(--lilac-d)'],mint:['var(--mint)','var(--mint-d)'],blush:['var(--blush)','var(--blush-d)'],teal:['var(--teal)','var(--teal-d)'],butter:['var(--butter)','var(--butter-d)'],rose:['var(--rose)','var(--rose-d)']};
+// [store, price, wasOrNote, rating, delivery/speed text, speedRank, color]
+const DEALS={
+ headphones:{n:'Noise-cancelling headphones, 30-hour battery',c:'sky',st:[['Amazon',198,'Free delivery Tue',4.7,1,'butter'],['Best Buy',199,'Pick up today',4.6,0,'sky'],['Walmart',204,'Free delivery Wed',4.5,2,'sky'],['Target',209,'Free delivery Thu',4.6,3,'rose']]},
+ serum:{n:'Vitamin C brightening serum, 30 ml',c:'blush',st:[['Ulta Beauty',21,'Free pickup today',4.8,0,'peach'],['Sephora',23,'Free shipping, 2 days',4.7,1,'lilac'],['Amazon',24,'Free delivery Tue',4.5,2,'butter']]},
+ concert:{n:'Floor seats, arena show, Saturday night',c:'lilac',st:[['SeatGeek',89,'Fees included, mobile tickets',4.6,0,'mint'],['Ticketmaster',95,'Fees included, mobile tickets',4.5,0,'sky'],['StubHub',102,'Fees included, mobile tickets',4.4,0,'lilac']]},
+ overshirt:{n:'Merino wool overshirt, all sizes',c:'mint',st:[['Nordstrom Rack',64,'Free shipping over $89',4.5,2,'sky'],["Macy's",69,'Free pickup today',4.4,0,'rose'],['Amazon',72,'Free delivery Wed',4.3,1,'butter']]},
+ flight:{n:'New York to Rome, round trip, October',c:'peach',st:[['Kiwi.com',412,'1 stop, 13 h',4.3,2,'mint'],['Expedia',428,'Nonstop, 9 h',4.5,0,'butter'],['Booking.com',441,'Nonstop, 9 h',4.4,0,'sky']]},
+ shoes1:{n:"Men's road running shoes, cushioned",c:'mint',st:[['Amazon',58,'Free delivery Tue',4.6,1,'butter'],['Dick\'s Sporting Goods',61,'Pick up today',4.6,0,'mint'],['Zappos',64,'Free 2-day shipping',4.8,2,'sky']]},
+ shoes2:{n:"Women's trail runners, waterproof",c:'mint',st:[['REI',74,'Free pickup Thu',4.7,1,'mint'],['Zappos',78,'Free 2-day shipping',4.8,0,'sky']]},
+ cream:{n:'Ceramide moisturizing cream, 16 oz',c:'blush',st:[['Target',14,'Pick up today',4.7,0,'rose'],['Ulta Beauty',15,'Free shipping over $35',4.8,2,'peach'],['Amazon',16,'Free delivery Tue',4.6,1,'butter']]},
+ hyaluronic:{n:'Hyaluronic acid serum, 30 ml',c:'blush',st:[['Sephora',19,'Free shipping, 2 days',4.6,1,'lilac'],['Ulta Beauty',21,'Free pickup today',4.7,0,'peach']]},
+ suv:{n:'Midsize SUV, unlimited miles, free cancellation',c:'teal',st:[['Expedia',39,'per day, airport pickup',4.5,0,'butter'],['Booking.com',41,'per day, airport pickup',4.4,0,'sky'],['Kayak',44,'per day, city pickup',4.3,1,'peach']]},
+ compact:{n:'Compact car, airport pickup',c:'teal',st:[['Booking.com',24,'per day, free cancellation',4.4,0,'sky'],['Expedia',26,'per day, free cancellation',4.5,0,'butter']]},
+ carryon1:{n:'Hardshell carry-on, lifetime warranty',c:'peach',st:[['Amazon',109,'Free delivery Wed',4.7,0,'butter'],['Macy\'s',115,'Free shipping',4.6,1,'rose']]},
+ carryon2:{n:'Softside carry-on, expandable',c:'peach',st:[['Target',84,'Pick up today',4.6,0,'rose'],['Walmart',88,'Free delivery Thu',4.5,1,'sky']]}
+};
+const scrim=document.getElementById('scrim'),list=document.getElementById('shList'),sorts=document.querySelectorAll('.sh-sort button');
+let cur=null,sortBy='price',lastFocus=null;
+const money=v=>'$'+v;
+function render(){
+  const d=DEALS[cur];let st=[...d.st];
+  const cheapest=Math.min(...st.map(x=>x[1]));
+  st.sort(sortBy==='price'?(a,b)=>a[1]-b[1]:sortBy==='rating'?(a,b)=>b[3]-a[3]:(a,b)=>a[4]-b[4]||a[1]-b[1]);
+  list.innerHTML=st.map(([s,pr,note,r,sp,col])=>{const best=pr===cheapest;const unit=cur==='suv'||cur==='compact'?'<small>per day</small>':'';const nn=unit?note.replace('per day, ',''):note;
+   return '<li class="store-row'+(best?' best':'')+'"><span class="logo-l" style="background:'+C[col][0]+';color:'+C[col][1]+'">'+s.replace(/[^A-Za-z]/g,'').slice(0,1)+'</span><div><div class="st-name">'+s+(best?'<span class="best-tag">Best price</span>':'')+'</div><div class="st-meta"><span class="ver"><span class="dot"></span>Verified</span>, '+r+' stars, '+nn+'</div></div><div class="st-right"><div class="st-price">'+money(pr)+unit+'</div><a class="btn '+(best?'primary':'')+' st-go" href="#">Go to '+s+'</a></div></li>'}).join('');
+}
+function open(k){if(!DEALS[k])return;cur=k;sortBy='price';sorts.forEach(b=>b.setAttribute('aria-pressed',b.dataset.s==='price'));const d=DEALS[k];
+  document.getElementById('shTitle').textContent=d.n;document.getElementById('shSub').textContent=d.st.length+' verified stores have this deal. Choose where to buy.';
+  const ic=document.getElementById('shIco');ic.style.background=C[d.c][0];ic.style.color=C[d.c][1];ic.textContent=d.n.slice(0,1);
+  render();lastFocus=document.activeElement;scrim.classList.add('open');document.getElementById('shClose').focus();}
+function close(){scrim.classList.remove('open');if(lastFocus)lastFocus.focus()}
+sorts.forEach(b=>b.onclick=()=>{sortBy=b.dataset.s;sorts.forEach(x=>x.setAttribute('aria-pressed',x===b));render()});
+document.getElementById('shClose').onclick=close;
+scrim.addEventListener('click',e=>{if(e.target===scrim)close()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&scrim.classList.contains('open')){e.stopPropagation();close()}},true);
+document.addEventListener('click',e=>{if(e.target.closest('.sheet'))return;const t=e.target.closest('[data-deal]');if(t){e.preventDefault();open(t.dataset.deal)}});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.deal[data-deal]')){e.preventDefault();open(e.target.dataset.deal)}});
+})();
+</script>
+</body>
+</html>
