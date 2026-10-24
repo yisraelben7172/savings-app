@@ -5,10 +5,13 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 ## Owner preferences
 - Owner (Israel) is not a developer. Do the work yourself: run commands, install, build, test, commit and push. Explain results in plain language, briefly.
 - Windows 11 laptop. Repo: github.com/yisraelben7172/savings-app (private). Branch: main.
+- Commit and push to GitHub (main) after every chunk of work. It's the owner's backup, and pushing is what updates Vercel.
+- Whenever the owner makes a new decision, update this file in the same push so the next session knows.
 
 ## Structure
 - Repo root = backend: NestJS 11 + Prisma 6 + PostgreSQL 17 (local, user `sales` / `sales_password`, db `sales_app`). `.env` holds keys; never commit it.
-- `web/` = website (Next.js, App Router, Tailwind, TypeScript, lucide-react). Deployed on Vercel with Root Directory = `web`. Run locally on port 3001 (API uses 3000).
+- `web/` = website (Next.js 16 with Cache Components, App Router, Tailwind 4, TypeScript, lucide-react). Deployed on Vercel with Root Directory = `web`. Run locally with `npm run dev` in web/ (port 3001; API uses 3000).
+- Start the API with start-api.bat; it first stops anything still holding port 3000 (the usual cause of the "port 3000 in use" error).
 - `mobile/` (not created yet) = Expo React Native app; Android APK via EAS cloud build.
 - Backend hosting planned on Render (US region); Cloudflare for domain/DNS. Domain not chosen yet (e.g. getvault.app).
 
@@ -32,10 +35,15 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Home: hero with pastel blobs + floating deal cards, one-line search with sparkle icon ("What are you looking for?") + quick-pick chips, "Dropped today" grid, "Browse by category" tiles, Gold Free-vs-Gold section with Monthly/Yearly toggle, blue AI assistant banner, floating "Ask the deal assistant" chat button.
 - Reference mockup: colorful-preview.html (in the repo root).
 
+## Website (done, first version)
+- Reads live data from NEXT_PUBLIC_API_URL (default http://localhost:3000); code in web/src/lib/api.ts. Next.js 16 has breaking changes: read web/node_modules/next/dist/docs before changing patterns. Pages keep a static frame and load data inside <Suspense> (Cache Components rule).
+- Pages: / (home), /deals (all deals + search, ?q=&sort=&maxPrice=), /search redirects to /deals, /category/[slug], /deals/[slug] (store list + price history + save), /assistant, /gold, /signin, /saved.
+- Tapping a deal card opens the store picker sheet; "Go to <store>" links go to the API's /api/go/:offerId. The hero search and the blue banner prompts open the floating assistant.
+- For now: saved deals live in the browser (localStorage) until accounts exist. Sign-in buttons are shown but disabled ("coming soon"). "Start Gold" goes to /signin until Stripe is added. Price alerts show a "coming soon" panel.
+
 ## Next steps
-1. Build the website in web/ to match the design, reading data from NEXT_PUBLIC_API_URL (default http://localhost:3000). Pages: home, category, deal page with store picker + price history, search, assistant chat, Gold, sign in, saved/alerts.
-2. Deploy backend to Render (render.yaml blueprint) and set NEXT_PUBLIC_API_URL in Vercel.
-3. Expo app in mobile/, Android APK via EAS.
-4. Auth, Stripe for Gold, real partner feeds (eBay Deal API, Ticketmaster Discovery, Travelpayouts), Google Safe Browsing link checks.
+1. Deploy backend to Render (render.yaml blueprint) and set NEXT_PUBLIC_API_URL in Vercel. Until then the live Vercel site shows "Deals are taking a break" because it can't reach the local API.
+2. Expo app in mobile/, Android APK via EAS.
+3. Auth, Stripe for Gold, real partner feeds (eBay Deal API, Ticketmaster Discovery, Travelpayouts), Google Safe Browsing link checks.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y
