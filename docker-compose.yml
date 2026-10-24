@@ -1,0 +1,16 @@
+# Optional: run PostgreSQL in Docker instead of installing it on Windows.
+services:
+  db:
+    image: postgres:17
+    container_name: sales-app-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sales
+      POSTGRES_PASSWORD: sales_password
+      POSTGRES_DB: sales_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
