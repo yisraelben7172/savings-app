@@ -3,31 +3,33 @@ import Link from "next/link";
 
 export function Nav() {
   return (
-    <div className="wrap">
-      <nav className="nav" aria-label="Main">
-        <Link className="logo" href="/">
-          <i aria-hidden />
-          Vault
-        </Link>
-        <div className="navlinks">
-          <Link href="/deals">Shopping</Link>
-          <Link href="/category/hotels">Travel</Link>
-          <Link href="/category/concerts">Events</Link>
-          <Link href="/saved">Price alerts</Link>
-          <Link href="/gold" className="gold-link">
-            Gold
+    <header className="topbar">
+      <div className="wrap">
+        <nav className="nav" aria-label="Main">
+          <Link className="logo" href="/">
+            <i aria-hidden />
+            Vault
           </Link>
-        </div>
-        <div className="nav-right">
-          <Link className="icon-btn" href="/saved" aria-label="Saved deals">
-            <Heart size={20} aria-hidden />
-          </Link>
-          <Link className="btn" href="/signin">
-            Sign in
-          </Link>
-        </div>
-      </nav>
-    </div>
+          <div className="navlinks">
+            <Link href="/deals">Shopping</Link>
+            <Link href="/category/hotels">Travel</Link>
+            <Link href="/category/concerts">Events</Link>
+            <Link href="/assistant">Assistant</Link>
+            <Link href="/gold" className="gold-link">
+              Gold
+            </Link>
+          </div>
+          <div className="nav-right">
+            <Link className="icon-btn" href="/saved" aria-label="Saved deals">
+              <Heart size={20} aria-hidden />
+            </Link>
+            <Link className="btn" href="/signin">
+              Sign in
+            </Link>
+          </div>
+        </nav>
+      </div>
+    </header>
   );
 }
 
@@ -36,21 +38,40 @@ export function Footer() {
     <footer className="footer">
       <div className="wrap">
         <div className="cols">
-          <Link className="logo" href="/">
-            <i aria-hidden />
-            Vault
-          </Link>
-          <nav aria-label="Footer">
-            <Link href="/deals">All deals</Link>
-            <Link href="/assistant">Deal assistant</Link>
-            <Link href="/gold">Gold</Link>
-            <Link href="/saved">Saved</Link>
-            <Link href="/signin">Sign in</Link>
-          </nav>
+          <div>
+            <Link className="logo" href="/">
+              <i aria-hidden />
+              Vault
+            </Link>
+            <p className="about">Prices from stores we&apos;ve checked, tracked over time, so you buy at the right moment.</p>
+          </div>
+          <div>
+            <h3>Shop</h3>
+            <ul>
+              <li><Link href="/deals">All deals</Link></li>
+              <li><Link href="/category/electronics">Electronics</Link></li>
+              <li><Link href="/category/beauty">Beauty</Link></li>
+              <li><Link href="/category/hotels">Travel</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Vault</h3>
+            <ul>
+              <li><Link href="/assistant">Deal assistant</Link></li>
+              <li><Link href="/gold">Gold</Link></li>
+              <li><Link href="/saved">Saved deals</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Account</h3>
+            <ul>
+              <li><Link href="/signin">Sign in</Link></li>
+              <li><Link href="/signin">Create account</Link></li>
+            </ul>
+          </div>
         </div>
         <p className="fine">
-          Vault collects publicly advertised deals from stores we&apos;ve checked. We may earn a commission when you buy through our links, at no extra
-          cost to you. Prices can change at the store.
+          We may earn a commission when you buy through our links, at no extra cost to you. Prices can change at the store.
         </p>
       </div>
     </footer>

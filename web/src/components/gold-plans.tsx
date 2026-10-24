@@ -27,8 +27,8 @@ export function GoldPlans({ headingLevel = 2 }: { headingLevel?: 1 | 2 }) {
   return (
     <section className="gold-sec" id="gold">
       <div className="gold-intro">
-        <Heading className={headingLevel === 1 ? "page-title" : undefined}>Get the best deals first with Gold</Heading>
-        <p>Gold members see new deals 24 hours before everyone else, unlock Gold-only prices, and get alerts the moment a price drops.</p>
+        <Heading className={headingLevel === 1 ? "page-title" : undefined}>Gold gets you the first look at every price drop</Heading>
+        <p>See new deals 24 hours before everyone else, unlock Gold-only prices, and get an alert the moment something you watch drops.</p>
         <div className="bill" role="radiogroup" aria-label="Billing period">
           <button type="button" role="radio" aria-checked={period === "m"} onClick={() => setPeriod("m")}>
             Monthly
@@ -56,7 +56,6 @@ export function GoldPlans({ headingLevel = 2 }: { headingLevel?: 1 | 2 }) {
           </Link>
         </div>
         <div className="plan gold">
-          <span className="pop">Best value</span>
           <h3>Gold</h3>
           <div className="amt">
             {p.amt}

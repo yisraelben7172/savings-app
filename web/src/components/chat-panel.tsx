@@ -75,10 +75,7 @@ export function ChatPanel({
         </div>
         <div>
           <b>Deal assistant</b>
-          <small>
-            <span className="dot" />
-            Only recommends verified stores
-          </small>
+          <small>Only recommends verified stores</small>
         </div>
         {onClose && (
           <button className="x" onClick={onClose} aria-label="Close chat">

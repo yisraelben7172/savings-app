@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { useNowMinute } from "./client-hooks";
 import { goHref, money, type Offer } from "@/lib/api";
@@ -77,7 +78,7 @@ export function StoreList({ offers, priceUnit }: { offers: Offer[]; priceUnit: s
         })}
       </ul>
       <div className="sh-foot">
-        <span className="dot" />
+        <ShieldCheck size={15} aria-hidden />
         <span>
           Every store here passed our checks.{latest && now ? ` Prices checked ${minutesAgo(latest, now)}` : " Prices"} and can change at the store. We may earn a commission.
         </span>

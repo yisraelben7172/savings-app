@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 import { useState } from "react";
 import { useDealUI } from "./providers";
 
@@ -18,11 +18,11 @@ export function HeroSearch() {
         setQ("");
       }}
     >
-      <Sparkles className="spark" size={22} aria-hidden />
+      <Search className="spark" size={20} aria-hidden />
       <label className="sr" htmlFor="q">
         Search deals or ask the assistant
       </label>
-      <input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder='What are you looking for? Try "running shoes under $80"' maxLength={1000} />
+      <input id="q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="What are you looking for?" maxLength={1000} />
       <button className="btn primary" type="submit">
         Find deals
       </button>
@@ -30,16 +30,26 @@ export function HeroSearch() {
   );
 }
 
-/** Example prompts that open the assistant (used on the blue banner). */
+/** Example questions that open the assistant (used on the assistant banner). */
 export function AskChips({ asks }: { asks: string[] }) {
   const { openChat } = useDealUI();
   return (
     <div className="asks">
       {asks.map((a) => (
         <button key={a} type="button" onClick={() => openChat(a)}>
-          &ldquo;{a}&rdquo;
+          {a}
+          <ArrowUpRight size={18} aria-hidden />
         </button>
       ))}
     </div>
+  );
+}
+
+export function AskButton() {
+  const { openChat } = useDealUI();
+  return (
+    <button type="button" className="btn" onClick={() => openChat()}>
+      Ask the assistant
+    </button>
   );
 }

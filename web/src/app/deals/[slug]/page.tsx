@@ -43,17 +43,16 @@ async function DealBody({ params }: Props) {
       </div>
       <div className="deal-page">
         <div>
-          <div className={`deal-hero pastel p-${c.color}`}>
+          <div className={`deal-hero p-${c.color}`}>
             {deal.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={deal.imageUrl} alt="" />
             ) : (
-              <CategoryIcon slug={c.slug} size={120} strokeWidth={1.2} />
+              <span className="art">
+                <CategoryIcon slug={c.slug} size={64} strokeWidth={1.4} />
+              </span>
             )}
-            <span className={`tag${deal.isHot ? " hot" : ""}`}>
-              {deal.isHot ? "Hot · " : ""}
-              {deal.discountPct}% off
-            </span>
+            <span className="badge">{deal.discountPct}% off</span>
             {deal.goldOnly ? <span className="gtag">Gold only</span> : deal.goldEarlyAccess ? <span className="gtag">Gold early access</span> : null}
           </div>
           <div className="panel">
@@ -64,18 +63,18 @@ async function DealBody({ params }: Props) {
         <div>
           <span className="ver">
             <span className="dot" />
-            Verified · {c.name}
+            {deal.offers.length} verified store{deal.offers.length === 1 ? "" : "s"}
           </span>
           <h1>{deal.title}</h1>
-          <div className="price" style={{ marginTop: 16 }}>
+          <div className="price">
             <b>{money(deal.bestPrice)}</b>
             {deal.priceUnit && <small>{deal.priceUnit}</small>}
             <s>{money(deal.originalPrice)}</s>
           </div>
-          <p className="saved">
-            You save {money(deal.saved)}
-            {deal.priceUnit ? ` ${deal.priceUnit}` : ""} ({deal.discountPct}% off)
-          </p>
+          <span className="keep">
+            You keep {money(deal.saved)}
+            {deal.priceUnit ? ` ${deal.priceUnit}` : ""}, {deal.discountPct}% less than usual
+          </span>
           {deal.description && <p style={{ marginTop: 16, color: "var(--muted)" }}>{deal.description}</p>}
           <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
             <SaveButton slug={deal.slug} />

@@ -23,20 +23,25 @@ export function DealCard({ deal }: { deal: Deal }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={deal.imageUrl} alt="" loading="lazy" />
         ) : (
-          <CategoryIcon slug={deal.category.slug} size={68} strokeWidth={1.4} />
+          <span className="art">
+            <CategoryIcon slug={deal.category.slug} size={36} strokeWidth={1.6} />
+          </span>
         )}
-        <span className={`tag${deal.isHot ? " hot" : ""}`}>
-          {deal.isHot ? "Hot · " : ""}
-          {deal.discountPct}% off
-        </span>
-        {deal.goldOnly ? <span className="gtag">Gold only</span> : deal.goldEarlyAccess ? <span className="gtag">Gold early access</span> : null}
+        <span className="badge">{deal.discountPct}% off</span>
+        {deal.goldOnly ? (
+          <span className="gtag">Gold only</span>
+        ) : deal.goldEarlyAccess ? (
+          <span className="gtag">Gold early access</span>
+        ) : deal.isHot ? (
+          <span className="badge trend">Trending</span>
+        ) : null}
       </div>
-      <div className="store">
+      <div className="meta">
+        <span>{deal.category.name}</span>
         <span className="ver">
           <span className="dot" />
-          Verified
-        </span>{" "}
-        · {deal.category.name}
+          Verified stores
+        </span>
       </div>
       <h4>{deal.title}</h4>
       <div className="price">
@@ -44,6 +49,7 @@ export function DealCard({ deal }: { deal: Deal }) {
         {deal.priceUnit && <small>{deal.priceUnit}</small>}
         <s>{money(deal.originalPrice)}</s>
       </div>
+      <span className="keep">You keep {money(deal.saved)}</span>
     </Link>
   );
 }
@@ -53,10 +59,10 @@ export function DealGridSkeleton({ count = 4 }: { count?: number }) {
     <div className="deals" aria-busy="true" aria-label="Loading deals">
       {Array.from({ length: count }, (_, i) => (
         <div key={i}>
-          <div className="skel" style={{ aspectRatio: "4/3", borderRadius: 20 }} />
+          <div className="skel" style={{ aspectRatio: "5/4", borderRadius: 16 }} />
           <div className="skel" style={{ height: 14, width: "40%", marginTop: 16 }} />
           <div className="skel" style={{ height: 18, marginTop: 10 }} />
-          <div className="skel" style={{ height: 28, width: "50%", marginTop: 12 }} />
+          <div className="skel" style={{ height: 24, width: "50%", marginTop: 12 }} />
         </div>
       ))}
     </div>

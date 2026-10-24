@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCategories, getDeals, type Category, type Deal, type DealQuery } from "@/lib/api";
+import { CategoryIcon } from "@/lib/icons";
 import { DealCard } from "./deal-card";
 
 function ApiDown() {
@@ -56,10 +57,15 @@ export async function CategoryTiles({ current }: { current?: string }) {
           href={`/category/${c.slug}`}
           aria-current={c.slug === current ? "page" : undefined}
         >
-          {c.name}
-          <small>
-            {c.dealCount.toLocaleString("en-US")} deal{c.dealCount === 1 ? "" : "s"}
-          </small>
+          <span className="chipicon">
+            <CategoryIcon slug={c.slug} size={18} strokeWidth={1.8} />
+          </span>
+          <span>
+            <b>{c.name}</b>
+            <small>
+              {c.dealCount.toLocaleString("en-US")} deal{c.dealCount === 1 ? "" : "s"}
+            </small>
+          </span>
         </Link>
       ))}
     </nav>
@@ -68,11 +74,7 @@ export async function CategoryTiles({ current }: { current?: string }) {
 
 export function CategoryTilesSkeleton() {
   return (
-    <div className="cats" aria-hidden>
-      {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="skel" style={{ height: 76, borderRadius: 18 }} />
-      ))}
-    </div>
+    <div className="skel" style={{ height: 152, borderRadius: 18 }} aria-hidden />
   );
 }
 

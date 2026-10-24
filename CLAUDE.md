@@ -29,12 +29,18 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Sign-in: Google + Apple + email. Browsing allowed without an account.
 - Required copy: affiliate disclosure ("We may earn a commission"), AI disclosure in chat, "prices can change at the store".
 
-## Design (colorful light style; dark mode follows the phone)
+## Design direction (decided 2026-10-25, replaces the louder mockup look)
+- Feel: premium, calm, money-smart. Shoppers should feel financially responsible, never cheap. No Temu or coupon-site energy, no "AI slop" templates.
+- Idea: "Buy it when the price is right." Proof of a good price is the hero: a live price-check card with the 90-day price line and "You keep $X".
+- Savings green is the one emotional color; navy ink for premium surfaces (Gold card, assistant banner, chat button); cobalt for primary actions. Category pastels are small icon chips only, not big tiles. No red "HOT" badges ("Trending" instead), no ALL-CAPS labels, no dot-separated meta, no arrows appended to link text.
+- Prices use tabular numbers. Claims must be true (e.g. only say "lowest in N days" when the history shows it).
+
+## Design tokens (dark mode follows the phone)
 - Fonts: Schibsted Grotesk (headings, prices), Figtree (body).
 - Colors: page #FFFFFF, mist #F0F3F8, line #E1E6EE, ink #141B2D, muted #5E6779, cobalt #2F55E4 (actions), save-green #0E8A5F (savings + Verified), hot #FF5B45, gold #F6C64E (Gold only).
 - Category pastels (bg / fg): electronics sky #DCEBFF/#2F55E4, clothing mint #D3F2E2/#0E8A5F, beauty blush #FCE1F3/#B52F86, hotels peach #FFE3D3/#D9531E, car-rentals teal #D2F1F4/#0B7A87, concerts rose #FFDDE6/#C42D5C, home butter #FFF0BF/#A36A00, flights lilac #E9E0FF/#6B46D6.
-- Home: hero with pastel blobs + floating deal cards, one-line search with sparkle icon ("What are you looking for?") + quick-pick chips, "Dropped today" grid, "Browse by category" tiles, Gold Free-vs-Gold section with Monthly/Yearly toggle, blue AI assistant banner, floating "Ask the deal assistant" chat button.
-- Reference mockup: colorful-preview.html (in the repo root).
+- Home: left-aligned hero (headline, search, quick links, trust line) with the price-check card on the right; "Price drops today" grid; category row; Gold Free-vs-Gold with Monthly/Yearly toggle (Gold card is navy); navy assistant banner; floating "Ask the deal assistant" button.
+- colorful-preview.html in the repo root is the original mockup, kept for reference only; the live site follows the direction above.
 
 ## Website (done, first version)
 - Reads live data from NEXT_PUBLIC_API_URL (default http://localhost:3000); code in web/src/lib/api.ts. Next.js 16 has breaking changes: read web/node_modules/next/dist/docs before changing patterns. Pages keep a static frame and load data inside <Suspense> (Cache Components rule).

@@ -24,20 +24,20 @@ export function DealsBrowser({ base, params, category }: { base: string; params:
   return (
     <>
       <div className="filters">
-        <Form action={base} className="omni" style={{ margin: 0, flex: "1 1 320px", maxWidth: 520, padding: "6px 6px 6px 18px" }}>
-          <Search size={18} className="spark" style={{ color: "var(--muted)" }} aria-hidden />
+        <Form action={base} className="omni" style={{ flex: "1 1 320px", maxWidth: 520 }}>
+          <Search size={18} className="spark" aria-hidden />
           <label className="sr" htmlFor="deal-q">
             Search deals
           </label>
-          <input id="deal-q" name="q" defaultValue={params.q ?? ""} placeholder="Search deals, e.g. serum under $25" style={{ fontSize: 15, padding: "8px 0" }} />
+          <input id="deal-q" name="q" defaultValue={params.q ?? ""} placeholder="Search deals, e.g. serum under $25" />
           {params.sort && <input type="hidden" name="sort" value={params.sort} />}
-          <button className="btn primary" type="submit" style={{ padding: "11px 18px" }}>
+          <button className="btn primary" type="submit">
             Search
           </button>
         </Form>
-        <div className="filters" style={{ marginTop: 0 }} role="group" aria-label="Sort deals">
+        <div className="seg" role="group" aria-label="Sort deals">
           {SORTS.map(([value, label]) => (
-            <Link key={label} className="chip" aria-current={(params.sort ?? "") === value} href={href(base, { ...params, sort: value })}>
+            <Link key={label} aria-current={(params.sort ?? "") === value} href={href(base, { ...params, sort: value })}>
               {label}
             </Link>
           ))}
