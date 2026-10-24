@@ -163,3 +163,110 @@ model ChatMessage {
   content   String
   createdAt DateTime    @default(now())
 }
+
+// ---------- Partner outreach (admin only) ----------
+
+enum PartnerStatus {
+  NEW // not contacted yet
+  CONTACTED // first email sent, waiting
+  REPLIED // they wrote back; follow-ups stop
+  PARTNERED
+  DECLINED
+  OPTED_OUT // asked not to be emailed; never email again
+  BOUNCED // address doesn't work
+}
+
+enum EmailStatus {
+  DRAFT // waiting for the owner's approval
+  APPROVED // approved; the sender sends it during business hours
+  SENT
+  SKIPPED
+  FAILED
+}
+
+// A brand, store or network we want to work with.
+model Partner {
+  id              String          @id @default(cuid())
+  name            String
+  website         String?
+  category        String?
+  network         String? // impact, cj, rakuten, awin, direct...
+  contactName     String?
+  email           String?
+  sourceUrl       String? // where we found the contact (must be a public partner/affiliate page)
+  status          PartnerStatus   @default(NEW)
+  notes           String?
+  lastContactedAt DateTime?
+  emails          OutreachEmail[]
+  inbound         InboundEmail[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
+model EmailTemplate {
+  id        String          @id @default(cuid())
+  name      String
+  step      Int             @default(0) // 0 = first email, 1 and 2 = follow-ups
+  subject   String
+  body      String // merge fields: {{brand}} {{firstName}} {{category}} {{website}}
+  emails    OutreachEmail[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model OutreachEmail {
+  id         String         @id @default(cuid())
+  partnerId  String
+  partner    Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  templateId String?
+  template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  step       Int            @default(0)
+  toEmail    String
+  subject    String
+  body       String
+  status     EmailStatus    @default(DRAFT)
+  approvedAt DateTime?
+  sentAt     DateTime?
+  gmailId    String?
+  threadId   String?
+  messageId  String? // RFC Message-ID header, for threading follow-ups
+  error      String?
+  createdAt  DateTime       @default(now())
+
+  @@index([status])
+  @@index([partnerId])
+}
+
+// Replies and other mail that arrived in the outreach inbox.
+model InboundEmail {
+  id         String   @id @default(cuid())
+  gmailId    String   @unique
+  threadId   String?
+  partnerId  String?
+  partner    Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  fromEmail  String
+  fromName   String?
+  subject    String
+  snippet    String
+  body       String
+  kind       String   @default("reply") // reply | bounce | optout | other
+  read       Boolean  @default(false)
+  receivedAt DateTime
+
+  @@index([read])
+}
+
+// Addresses we must never email again (opt-outs and bounces).
+model Suppression {
+  email     String   @id
+  reason    String // optout | bounce | manual
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
