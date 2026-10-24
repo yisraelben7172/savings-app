@@ -1,4 +1,6 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { ASSISTANT_LIMITS } from '../rate-limits';
 import { IsArray, IsOptional, IsString, MaxLength } from 'class-validator';
 import { AssistantService } from './assistant.service';
 
@@ -8,6 +10,8 @@ class ChatDto {
 }
 
 @Controller('assistant')
+@UseGuards(ThrottlerGuard)
+@Throttle(ASSISTANT_LIMITS)
 export class AssistantController {
   constructor(private readonly assistant: AssistantService) {}
 

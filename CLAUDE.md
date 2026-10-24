@@ -18,7 +18,7 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 
 ## Backend (done)
 - Models: Category, Merchant (trustScore, approved, domain), Deal (bestPrice, discountPct, goldOnly, goldEarlyUntil), Offer (one per store), Click, PriceHistory, User (tier FREE/GOLD), SavedDeal, Alert, ChatSession/ChatMessage. Demo data in prisma/seed.ts.
-- API under /api: GET /health, /categories, /deals (category, q, maxPrice, sort, tier), /deals/:slug (offers + price history), GET /go/:offerId (logs click, adds affiliate tag, redirects), POST /assistant/chat.
+- API under /api: GET /health, /meta, /categories, /deals (category, q, maxPrice, sort, tier), /deals/:slug (offers + price history), GET /go/:offerId (logs click, adds affiliate tag, redirects), POST /assistant/chat.
 - Trust gate (src/deals/trust.ts): only approved merchants with trustScore >= 70; links must be https on the merchant's own domain. Never bypass it.
 - AI assistant (src/assistant): Claude via ANTHROPIC_API_KEY with a search_deals tool; it may only recommend deals from our DB and URLs are stripped from replies. Falls back to keyword search without a key.
 
@@ -48,9 +48,30 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Tapping a deal card opens the store picker sheet; "Go to <store>" links go to the API's /api/go/:offerId. The hero search and the blue banner prompts open the floating assistant.
 - For now: saved deals live in the browser (localStorage) until accounts exist. Sign-in buttons are shown but disabled ("coming soon"). "Start Gold" goes to /signin until Stripe is added. Price alerts show a "coming soon" panel.
 
+## Working rules from the owner's master brief (2026-10-25)
+- Goal: a production-ready multi-retailer AI shopping + affiliate platform. Work through docs/implementation-roadmap.md in priority order; keep it updated (checkboxes, dates).
+- Never invent products, prices, stock, discounts, reviews, partnerships, endpoints, IDs, commission rates or affiliate links. Unconfigured providers stay off and are labeled as such.
+- No scraping or bypassing access controls; only authorized APIs/feeds. Record each source's permission, caching and AI-use rules before enabling it. Don't send a provider's content to Claude unless its agreement allows it (Amazon especially).
+- Ask first before: paid sign-ups, contracts, contacting anyone, sending email, destructive migrations, production deploys/config changes. Everything else: just do it, test it, push it.
+- Report at the end of each session: what was inspected, implemented, files/migrations, tests actually run, results, what's operational, what's blocked, next priorities.
+- Docs live in docs/ (architecture, implementation-roadmap, affiliate-integrations, security, operations).
+
+## Admin dashboard + partner outreach (done 2026-10-25; awaiting Gmail/Telegram credentials)
+- Owner decision: outreach uses a Google Workspace mailbox via the Gmail API (not Resend/SES, which ban cold email), Telegram for phone alerts, and a daily approve-before-send queue. Nothing is ever sent without the owner's approval. Affiliate networks (Impact, CJ, Awin, Rakuten, eBay, Travelpayouts, Amazon) are the main partnership path; direct email is for brands not on a network.
+- Web: /admin (password ADMIN_PASSWORD; signed httpOnly cookie). Pages: Overview, Approval queue, Partners (+ detail), Inbox, Templates, Settings. Server-only client web/src/lib/admin.ts calls the API with ADMIN_API_KEY. Public pages live in web/src/app/(site)/.
+- API: src/outreach (partners, templates, queue, Gmail, Telegram, unsubscribe, scheduler), src/admin/admin.guard.ts (x-admin-key). Jobs: send one approved email every 5 min (weekday business hours ET, daily cap, spacing, postal address required), inbox check every 3 min (replies, opt-outs, bounces, auto-pause at >3% bounces), weekday 8am ET draft prep + Telegram summary.
+- CAN-SPAM: postal address + unsubscribe in every email, one-click List-Unsubscribe, Suppression table honored forever. Never import bought/scraped lists.
+- One-time Gmail setup: `npm run gmail:connect` (needs GMAIL_CLIENT_ID/SECRET in .env).
+
+## Quality and safety (Priority 1, done 2026-10-25)
+- API tests: `npm test` (Jest, test/). Run before every push, plus `npm run lint` and builds.
+- Rate limits (src/rate-limits.ts): assistant 10/min + 100/day per IP, /go 60/min, unsubscribe 20/min. Catalog reads deliberately unlimited (website server shares Vercel IPs). JSON body limit 64 KB, security headers, trust proxy 1.
+- Demo data honesty: seed sets Setting `catalog:demo`=true; GET /api/meta returns demoData; the site shows a "these are samples" bar. Keep it until real sources replace the demo catalog.
+
 ## Next steps
-1. Owner creates the Render Blueprint from this repo, then sets NEXT_PUBLIC_API_URL=https://<vault-api URL from Render> in Vercel (Production + Preview) and redeploys. Until then the live Vercel site shows "Deals are taking a break". Before public launch: set SEED_DEMO_DATA=false (demo prices are examples) and upgrade the free plans.
-2. Expo app in mobile/, Android APK via EAS.
-3. Auth, Stripe for Gold, real partner feeds (eBay Deal API, Ticketmaster Discovery, Travelpayouts), Google Safe Browsing link checks.
+1. Owner: finish the Render Blueprint, send the vault-api address; in Vercel set NEXT_PUBLIC_API_URL, ADMIN_API_KEY (same as Render), ADMIN_PASSWORD, then redeploy. Add ADMIN_API_KEY, WEB_URL (and later Gmail/Telegram values) in Render.
+2. Roadmap Priority 2: Product vs offer model, retailer registry, DataSource permissions, provenance + freshness, ingestion framework with a partner CSV feed as the first real source, identifier-based dedupe.
+3. Then Priority 3 (affiliate link service per network, richer click events, commission import), 4 (typed shopping requests, search, comparisons), 5 (agents).
+4. Later: Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y

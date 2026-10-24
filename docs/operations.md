@@ -22,9 +22,13 @@ API (`.env` locally, Render online). Names only; see `.env.example`.
 | `PUBLIC_API_URL` | Public API address for unsubscribe links (Render provides `RENDER_EXTERNAL_URL` automatically) |
 | `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_SENDER` | Outreach mailbox |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Phone alerts |
-| `SEED_DEMO_DATA` | Render only: `true` loads demo deals on start. Set `false` before launch |
+| `SEED_DEMO_DATA` | Render only: `true` loads demo deals on start. `false` stops re-loading them but does not delete demo deals already in the database; the site keeps its "samples" bar until they're removed (cleanup script planned with the first real data source). |
 
 Website (`web/.env.local` locally, Vercel online): `NEXT_PUBLIC_API_URL`, `ADMIN_API_KEY`, `ADMIN_PASSWORD`.
+
+## Checks before pushing
+- API: `npm test` (Jest, 41 tests), `npm run lint` (type check), `npm run build`.
+- Website: `cd web`, `npx eslint src`, `npx next build`. Stop `npm run dev` first or the build and the dev server fight over `web/.next`; if the dev server serves stale styles, stop it and delete `web/.next`.
 
 ## Deploy
 - Push to `main` on GitHub. Render redeploys the API (`render.yaml`), Vercel redeploys the website (Root Directory `web`).

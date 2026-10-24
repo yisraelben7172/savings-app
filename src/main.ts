@@ -1,22 +1,18 @@
 import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-
-/** Allows exact origins plus simple wildcards like https://*.vercel.app */
-function corsOrigin(list: string) {
-  const rules = list.split(',').map((s) => s.trim()).filter(Boolean);
-  return (origin: string | undefined, cb: (err: Error | null, ok?: boolean) => void) => {
-    if (!origin) return cb(null, true);
-    const ok = rules.some((r) =>
-      r.includes('*') ? new RegExp('^' + r.replace(/[.]/g, '\\.').replace('*', '[a-z0-9-]+') + '$', 'i').test(origin) : r === origin,
-    );
-    cb(null, ok);
-  };
-}
+import { corsOrigin, securityHeaders } from './http';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  // Render runs one proxy in front of us; trust exactly one hop so req.ip is the real client (used by rate limits).
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+  app.useBodyParser('json', { limit: '64kb' });
+  app.useBodyParser('urlencoded', { extended: false, limit: '16kb' });
+  app.use(securityHeaders);
   app.setGlobalPrefix('api');
   app.enableCors({ origin: corsOrigin(process.env.CORS_ORIGIN ?? 'http://localhost:3001') });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

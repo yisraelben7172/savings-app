@@ -119,6 +119,9 @@ h1, h2, h3, h4, h5, p { margin: 0; }
 .btn.goldbtn:hover { background: #f1bb33; }
 .btn.lg { height: 52px; padding: 0 24px; font-size: 16px; border-radius: 12px; }
 
+/* sample-data notice */
+.demo-bar { background: var(--navy); color: #dfe4ee; text-align: center; font-size: 13.5px; padding: 8px 16px; }
+
 /* nav */
 .topbar { border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--page) 88%, transparent); backdrop-filter: saturate(1.4) blur(10px); position: sticky; top: 0; z-index: 40; }
 .nav { display: flex; align-items: center; gap: 32px; height: 68px; }

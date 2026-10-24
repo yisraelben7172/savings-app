@@ -53,6 +53,10 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export function getMeta() {
+  return get<{ demoData: boolean }>("/meta");
+}
+
 export function getCategories() {
   return get<Category[]>("/categories");
 }

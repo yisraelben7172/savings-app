@@ -10,14 +10,11 @@ Checklist for turning Vault into a production multi-retailer shopping platform. 
 
 ## Priority 1: Stabilize the foundation
 Depends on: nothing.
-- [ ] Test framework for the API (Jest) with tests for the trust gate, redirect safety, admin guard, unsubscribe tokens, email formatting, template rendering, outreach approval rules.
-  *Done when* `npm test` runs in CI-like fashion locally and passes.
-- [ ] Rate limits on public endpoints (assistant chat strictest), explicit JSON body limit, basic security headers.
-  *Done when* tests show the 429 after the limit and normal use is unaffected.
-- [ ] Fix the 5 high-severity dependency advisories with non-breaking updates.
-  *Done when* `npm audit --omit=dev` is clean or remaining items are documented.
-- [ ] Demo data honesty: the public site shows a clear "sample prices" notice whenever demo data is loaded.
-  *Done when* the notice appears with `SEED_DEMO_DATA=true` and disappears when real sources replace it.
+- [x] Test framework for the API (Jest, `npm test`): 41 tests in 7 suites covering the trust gate, redirect safety, Amazon tag rules, admin guard, unsubscribe tokens, email format and CAN-SPAM footer, opt-out detection, sending rules (approval, hours, limits, suppression, failures), follow-up drafting, inbox handling, CORS rules and the assistant rate limit. (2026-10-25)
+- [x] Rate limits (per IP, in memory): assistant 10/min and 100/day, store redirect 60/min, unsubscribe 20/min. Catalog reads are not limited because the website's server shares Vercel IPs. JSON body limit 64 KB (413 above), security headers, `trust proxy` = 1 hop for Render.
+- [~] Dependency advisories: NestJS updated within v11 and `multer` pinned to 2.5.0 (fixed). Remaining: `deepmerge-ts` inside the Prisma CLI, fixed only in Prisma 7 (major upgrade, planned; affects the CLI, not request handling).
+- [x] Demo data honesty: `GET /api/meta` reports `demoData` (set by `prisma/seed.ts`); the public site shows a "these are samples" bar on every page while it's true.
+- [ ] Website tests (component/e2e) — no runner in `web/` yet; planned with Playwright when shopper accounts arrive.
 - **Owner decision needed**: keep demo data on the live site (with the notice) until the first real source is approved, or show an empty "launching soon" site.
 
 ## Priority 2: Commerce data foundation

@@ -1,10 +1,12 @@
-import { Controller, Get, NotFoundException, Param, Query, Res } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { isLinkOnMerchantDomain, MIN_TRUST_SCORE } from '../deals/trust';
 
 /** "Go to store" button: logs the click, adds our affiliate tracking, sends the user to the store. */
 @Controller('go')
+@UseGuards(ThrottlerGuard)
 export class ClicksController {
   constructor(private readonly prisma: PrismaService) {}
 

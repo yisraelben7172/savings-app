@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { DemoNotice } from "@/components/demo-notice";
 import { DealUIProvider } from "@/components/providers";
 import { Footer, Nav } from "@/components/site-chrome";
 
@@ -6,6 +7,9 @@ import { Footer, Nav } from "@/components/site-chrome";
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <DealUIProvider>
+      <Suspense fallback={null}>
+        <DemoNotice />
+      </Suspense>
       <Nav />
       <main>{children}</main>
       <Footer />

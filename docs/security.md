@@ -17,7 +17,7 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 - **Done**: API DTOs validated with class-validator (`whitelist: true` strips unknown fields). Prisma queries are parameterized; the two raw SQL queries in admin stats use tagged templates (parameterized).
 - **Done**: React escapes output; no `dangerouslySetInnerHTML` in the app.
 - **Done**: the unsubscribe page only echoes fixed text.
-- **Partial**: request size limit relies on the Express default (100 KB JSON). Planned: explicit limit.
+- **Done**: request size limits: JSON 64 KB, form bodies 16 KB (413 above). Security headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, no `X-Powered-By`.
 
 ## Redirects (affiliate links)
 - **Done**: `/api/go/:offerId` never takes a URL from the request. It loads the stored offer URL, re-checks the trust gate, requires https on the merchant's own domain, then redirects. No open redirect.
@@ -27,7 +27,8 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 - **Planned**: typed schema validation of tool arguments, spending limits, token-usage logging.
 
 ## Abuse prevention
-- **Planned (Priority 1)**: rate limits on public endpoints, especially `POST /api/assistant/chat` (costs money per call) and `/api/go`.
+- **Done**: per-IP rate limits: assistant 10/minute and 100/day, store redirect 60/minute, unsubscribe 20/minute. Limits are in memory per API instance (fine for one instance; move to a shared store if we scale out). Catalog reads aren't limited at the app level because the website's server calls them from shared Vercel IPs; put Cloudflare in front of the API for edge rate limiting.
+- **Note**: CORS allows `https://*.vercel.app`, which includes other people's Vercel projects. CORS doesn't protect the API from scripts anyway, but once the site has its own domain, narrow `CORS_ORIGIN` to it.
 - **Done**: outreach can't send without owner approval, a postal address, and business hours; daily cap; automatic pause on bounce rate; suppression list honored on every send.
 
 ## Email compliance (CAN-SPAM, Gmail/Yahoo sender rules)
@@ -40,7 +41,8 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 - **Planned**: retention periods (clicks 24 months, inbound outreach email 24 months, suppression list kept indefinitely as required) and a deletion job.
 
 ## Dependencies
-- 2026-10-25: `npm audit` on the API found 5 high-severity advisories (multer via @nestjs/platform-express; deepmerge-ts via the Prisma CLI), all with non-breaking fixes. The website had none. Fix tracked in Priority 1.
+- 2026-10-25: `npm audit` on the API found high-severity advisories in multer (via @nestjs/platform-express) and deepmerge-ts (via the Prisma CLI). Fixed: NestJS 11.2.8 and an npm override pinning multer 2.5.0 (we don't accept uploads anyway). Remaining: deepmerge-ts, fixed only in Prisma 7 (major upgrade, planned); it affects the Prisma CLI's config loading, not request handling. The website had no advisories.
+- npm 11 blocks package install scripts by default; Prisma's three packages are explicitly approved in `package.json` (`allowScripts`).
 
 ## Reporting a problem
 Pause outreach from Admin → Settings. Rotate `ADMIN_API_KEY`/`ADMIN_PASSWORD` to sign everyone out.

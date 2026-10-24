@@ -103,6 +103,8 @@ async function main() {
       await prisma.priceHistory.createMany({ data: pts });
     }
   }
+  // Lets the website show a "sample prices" notice while this demo catalog is live.
+  await prisma.setting.upsert({ where: { key: 'catalog:demo' }, update: { value: 'true' }, create: { key: 'catalog:demo', value: 'true' } });
   console.log('Demo deals loaded');
 }
 

@@ -1,4 +1,5 @@
-import { Controller, Get, Header, HttpCode, Post, Query } from '@nestjs/common';
+import { Controller, Get, Header, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { timingSafeEqual } from 'node:crypto';
 import { unsubscribeToken } from './mail-format';
 import { OutreachService } from './outreach.service';
@@ -16,6 +17,8 @@ function valid(email?: string, token?: string) {
 
 /** Public opt-out link in every outreach email. POST is the one-click version mail apps use. */
 @Controller('outreach/unsubscribe')
+@UseGuards(ThrottlerGuard)
+@Throttle({ burst: { limit: 20, ttl: 60_000 } })
 export class UnsubscribeController {
   constructor(private readonly outreach: OutreachService) {}
 
