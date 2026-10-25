@@ -103,8 +103,8 @@ export function ChatPanel({
                     {money(d.bestPrice)}
                     {d.priceUnit ? `/${d.priceUnit.replace("per ", "")}` : ""}
                   </b>
-                  <s>{money(d.originalPrice)}</s>
-                  <em>Save {money(d.saved)}</em>
+                  {d.saved > 0 && <s>{money(d.originalPrice)}</s>}
+                  {d.saved > 0 && <em>Save {money(d.saved)}</em>}
                 </div>
                 <span className="go">Compare {d.storeCount} store{d.storeCount === 1 ? "" : "s"}</span>
               </button>

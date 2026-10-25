@@ -27,7 +27,7 @@ export function DealCard({ deal }: { deal: Deal }) {
             <CategoryIcon slug={deal.category.slug} size={36} strokeWidth={1.6} />
           </span>
         )}
-        <span className="badge">{deal.discountPct}% off</span>
+        {deal.discountPct > 0 && <span className="badge">{deal.discountPct}% off</span>}
         {deal.goldOnly ? (
           <span className="gtag">Gold only</span>
         ) : deal.goldEarlyAccess ? (
@@ -47,9 +47,9 @@ export function DealCard({ deal }: { deal: Deal }) {
       <div className="price">
         <b>{money(deal.bestPrice)}</b>
         {deal.priceUnit && <small>{deal.priceUnit}</small>}
-        <s>{money(deal.originalPrice)}</s>
+        {deal.saved > 0 && <s>{money(deal.originalPrice)}</s>}
       </div>
-      <span className="keep">You keep {money(deal.saved)}</span>
+      {deal.saved > 0 && <span className="keep">You keep {money(deal.saved)}</span>}
     </Link>
   );
 }

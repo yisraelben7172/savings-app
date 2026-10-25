@@ -61,8 +61,10 @@ export function StoreList({ offers, priceUnit }: { offers: Offer[]; priceUnit: s
                       Verified
                     </span>
                   )}
-                  , {o.rating} stars{o.deliveryNote ? `, ${o.deliveryNote}` : ""}
+                  {o.rating != null ? `, ${o.rating} stars` : ""}
+                  {o.deliveryNote ? `, ${o.deliveryNote}` : ""}
                 </div>
+                {o.attribution && <div className="st-meta">{o.attribution}</div>}
               </div>
               <div className="st-right">
                 <div className="st-price">

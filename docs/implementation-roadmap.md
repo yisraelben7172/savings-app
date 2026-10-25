@@ -17,16 +17,20 @@ Depends on: nothing.
 - [ ] Website tests (component/e2e) — no runner in `web/` yet; planned with Playwright when shopper accounts arrive.
 - **Owner decision needed**: keep demo data on the live site (with the notice) until the first real source is approved, or show an empty "launching soon" site.
 
-## Priority 2: Commerce data foundation
+## Priority 2: Commerce data foundation (done 2026-10-25)
 Depends on: P1 tests.
-- [ ] `Product` (canonical item: brand, model, GTIN/UPC/EAN/MPN, attributes, images where permitted) separate from listings; migrate `Deal` → product + offers without losing data.
-- [ ] `Retailer` registry (extend `Merchant`): integration type, active flag, health, last sync. No secrets in rows.
-- [ ] `DataSource` + permission record: access method, agreement link, allowed fields, cache/expiry rules, AI-use permission, attribution text.
-- [ ] Offer provenance and freshness: source ID, fetched/verified time, per-source freshness policy; stale offers labeled or hidden, never shown as live.
-- [ ] Provider adapter interface (fetch, normalize, validate, upsert, report) with idempotent upserts, pagination, rate limiting, bounded retries; ingestion run records.
-- [ ] Partner-provided CSV feed adapter as the first real source (needs no API approval).
-- [ ] Duplicate detection by identifiers (GTIN/MPN+brand), never by title alone; duplicate candidates listed in admin.
-  *Done when* a CSV feed can be imported twice with no duplicates, every offer shows source and freshness, and tests cover normalization, dedupe and freshness.
+- [x] `Product` (canonical item: brand, model, MPN, GTIN normalized to 14 digits with check digit, attributes, image where permitted). `Deal` is now the shopper-facing listing for one product (`Deal.productId`, unique); old demo deals keep `productId = null` and still work.
+- [x] Retailer registry on `Merchant`: active flag, integration type, affiliate status, supported categories, link capability, compliance notes, health, last sync. No secrets in rows. Admin → Stores.
+- [x] `DataSource` + permission record: kind, status (starts AWAITING_APPROVAL), access method, agreement link/notes, allowed fields, AI-use permission (default no), attribution text, freshness hours, retention days, full-snapshot flag, column mapping. Activation is refused until the record is complete and Vault has an importer for the kind. Admin → Data sources.
+- [x] Offer provenance and freshness: `sourceId`, `retailerSku`, `listPrice`, `currency`, `condition`, `lastCheckedAt`, `staleAfter`. The trust gate hides stale offers, inactive stores and disabled sources; card prices are computed from the offers shown right now and never invent a discount.
+- [x] Ingestion framework (`src/catalog`): adapter interface (pages + normalize), run records, idempotent upserts keyed by source + SKU, bounded concurrency (4), retries with backoff for transient database errors, full-snapshot "missing = out of stock" (skipped if over half the rows were rejected), price history on change, retention, source and store health.
+- [x] CSV feed adapter: RFC 4180 parser (quotes, commas/newlines in fields, BOM, tab/semicolon detection), header aliases + per-source column mapping and category map, validation with a reason per rejected row, allowed-fields enforcement, 5 MB / 20,000-row limits.
+- [x] Identifier-only matching: GTIN, then brand + MPN, then the source's own SKU. Never title. Possible duplicates (same brand and simplified title) are listed in Admin → Catalog health for a person to review.
+- [x] The assistant only receives data whose source has `aiUseAllowed = true`.
+- [x] Tests: unit tests for parser, normalization and row validation; 8 integration tests on a real database (`npm run test:int`) for idempotent re-import, price changes, snapshots, cross-store matching, staleness, AI filter, unapproved/disabled sources, bad files and retention. Verified end to end locally through the admin and the public site.
+- [ ] XML feed, store API and network API importers: recorded as source kinds, but no importer until a provider approves access (then built from its official docs).
+- [ ] Scheduled imports (pull a feed URL on a timer): planned once a partner offers a feed URL; uploads are manual today.
+- [ ] Remove the demo catalog: a cleanup step that deletes `src_demo_seed` data and clears the "samples" notice once real sources cover the site.
 
 ## Priority 3: Affiliate monetization
 Depends on: P2 (retailers, sources). Real links need program approval (*awaiting approval*).

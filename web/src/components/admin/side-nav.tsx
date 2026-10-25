@@ -1,11 +1,14 @@
 "use client";
 
-import { FileText, Inbox, LayoutDashboard, Send, Settings, Users } from "lucide-react";
+import { Database, FileText, Inbox, LayoutDashboard, Package, Send, Settings, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/catalog", label: "Catalog health", icon: Package },
+  { href: "/admin/stores", label: "Stores", icon: Store },
+  { href: "/admin/sources", label: "Data sources", icon: Database },
   { href: "/admin/queue", label: "Approval queue", icon: Send },
   { href: "/admin/partners", label: "Partners", icon: Users },
   { href: "/admin/inbox", label: "Inbox", icon: Inbox },

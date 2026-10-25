@@ -49,7 +49,27 @@ The brief suggests `lib/ai`, `lib/catalog`, `lib/retailers`, `lib/affiliate`... 
 - **Affiliate**: `Click` (offer, optional user, source).
 - **Outreach**: `Partner`, `EmailTemplate`, `OutreachEmail`, `InboundEmail`, `Suppression`, `Setting`.
 
-Gaps against the brief (see the roadmap): no `Product` separate from `Deal` (no GTIN/MPN, brand, attributes), no `DataSource` / permission records, no provenance or freshness policy on offers, no affiliate program records, no conversion/commission records, no audit log, no agent runs.
+- **Catalog foundation (2026-10-25)**: `Product` (canonical item, matched only by GTIN or brand + MPN), `Deal` (the listing for one product; `productId` null for old demo deals), `Offer` (one store's price: source, SKU, list price, freshness via `staleAfter`), `DataSource` (where data comes from + its permission record), `IngestionRun` (every import with counts and row errors), retailer registry fields on `Merchant`.
+
+Gaps against the brief (see the roadmap): no affiliate program records, no conversion/commission records, no audit log, no agent runs, no importers beyond CSV feeds.
+
+## Catalog ingestion (`src/catalog`)
+
+```
+ CSV upload (admin) ──► POST /api/admin/sources/:id/import  (admin key checked before the 5 MB body is read)
+        │
+        ▼
+ IngestionService.importCsv
+   source must be ACTIVE (permission recorded) and linked to a store
+   └─ CsvFeedAdapter.pages()  → raw rows
+   └─ CsvFeedAdapter.normalize() → validated offer, or a rejected row with a reason
+   └─ per row, in a transaction, 4 at a time, retried on transient errors:
+        Product (GTIN → brand+MPN → this source's SKU → new) → Deal → Offer (+ price history on change)
+   └─ full snapshot: SKUs not in the file → out of stock
+   └─ recompute deal prices from currently shown offers; apply retention; record run + health
+```
+
+Adding a provider later means writing one adapter (`pages` + `normalize`) against its official docs; matching, freshness, upserts and health come from the framework.
 
 ## Request flows
 

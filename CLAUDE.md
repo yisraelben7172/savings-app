@@ -68,10 +68,17 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Rate limits (src/rate-limits.ts): assistant 10/min + 100/day per IP, /go 60/min, unsubscribe 20/min. Catalog reads deliberately unlimited (website server shares Vercel IPs). JSON body limit 64 KB, security headers, trust proxy 1.
 - Demo data honesty: seed sets Setting `catalog:demo`=true; GET /api/meta returns demoData; the site shows a "these are samples" bar. Keep it until real sources replace the demo catalog.
 
+## Catalog foundation (Priority 2, done 2026-10-25)
+- Models: Product (matched only by GTIN or brand+MPN, never title), Deal = shopper listing for one product (productId null for old demo deals), Offer with source/SKU/listPrice/staleAfter, DataSource with permission record, IngestionRun. Migration 20261025120000_catalog_sources; rollback SQL in prisma/rollbacks/.
+- Trust gate (src/deals/trust.ts) is now a function `trustedOffer()`: also hides stale prices, inactive stores and disabled sources. Card prices come from the offers shown now (`cardPrices`); a "was" price only from the source's own list price. The assistant uses `aiAllowedOffer()` (source.aiUseAllowed).
+- src/catalog: CSV adapter + IngestionService (idempotent, bounded concurrency, retries, snapshots, retention, health). Admin pages: Catalog health, Stores, Data sources (permission record → activate → upload CSV). Sources start AWAITING_APPROVAL; activation requires a complete record and an importer for the kind (only CSV_FEED today).
+- Demo data lives in DataSource `src_demo_seed`. Cards hide the "% off"/"You keep" when there's no stated discount.
+- Tests: `npm test` (unit) and `npm run test:int` (real DB, schema vault_test). Local browser-pane note: if the pane isn't visible on screen, streamed pages stay on their skeleton (requestAnimationFrame is paused); that's not an app bug.
+
 ## Next steps
 1. Owner: finish the Render Blueprint, send the vault-api address; in Vercel set NEXT_PUBLIC_API_URL, ADMIN_API_KEY (same as Render), ADMIN_PASSWORD, then redeploy. Add ADMIN_API_KEY, WEB_URL (and later Gmail/Telegram values) in Render.
-2. Roadmap Priority 2: Product vs offer model, retailer registry, DataSource permissions, provenance + freshness, ingestion framework with a partner CSV feed as the first real source, identifier-based dedupe.
-3. Then Priority 3 (affiliate link service per network, richer click events, commission import), 4 (typed shopping requests, search, comparisons), 5 (agents).
-4. Later: Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
+2. Owner: get a first real feed (a brand's product CSV, or a network catalog once approved) and onboard it via Admin → Stores and Data sources.
+3. Roadmap Priority 3: affiliate program records, per-network link service, richer click events, commission import. Then 4 (typed shopping requests, search, comparisons), 5 (agents).
+4. Later: scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y

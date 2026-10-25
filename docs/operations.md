@@ -27,7 +27,7 @@ API (`.env` locally, Render online). Names only; see `.env.example`.
 Website (`web/.env.local` locally, Vercel online): `NEXT_PUBLIC_API_URL`, `ADMIN_API_KEY`, `ADMIN_PASSWORD`.
 
 ## Checks before pushing
-- API: `npm test` (Jest, 41 tests), `npm run lint` (type check), `npm run build`.
+- API: `npm test` (Jest unit tests), `npm run test:int` (integration tests on a real database; they use a separate `vault_test` schema in the local Postgres and never touch `public`), `npm run lint` (type check), `npm run build`.
 - Website: `cd web`, `npx eslint src`, `npx next build`. Stop `npm run dev` first or the build and the dev server fight over `web/.next`; if the dev server serves stale styles, stop it and delete `web/.next`.
 
 ## Deploy
@@ -38,7 +38,11 @@ Website (`web/.env.local` locally, Vercel online): `NEXT_PUBLIC_API_URL`, `ADMIN
 ## Database migrations
 - Create locally: `npx prisma migrate dev --name <change>`. Commit the new folder in `prisma/migrations/`.
 - Applied in production automatically on API start (`prisma migrate deploy` in `render.yaml`).
-- Migrations are additive (new tables and columns). Rollback: deploy the previous commit; the extra tables are ignored by older code. To actually drop a table, write a new migration. Never edit an applied migration, and never run `prisma migrate reset` against production.
+- Migrations are additive (new tables and columns). Rollback: deploy the previous commit; the extra tables are ignored by older code. To actually remove a migration's changes, run its file in `prisma/rollbacks/` (e.g. `npx prisma db execute --file prisma/rollbacks/20261025120000_catalog_sources.down.sql --schema prisma/schema.prisma`) and delete its row from `_prisma_migrations`. That deletes the data in those tables, so it needs the owner's go-ahead. Never edit an applied migration, and never run `prisma migrate reset` against production.
+- If `prisma migrate dev` refuses to run ("non-interactive"), generate the SQL with `npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --script`, save it as a new migration folder, review it, then `npx prisma migrate deploy`.
+
+## Importing a product feed
+Admin → Data sources → the source → Import a feed file. Required columns: SKU, title, price (or sale_price), link, category. Results show counts and every rejected row with its line number. Feeds are re-uploaded by hand today (scheduled pulls are planned). See `docs/affiliate-integrations.md` for onboarding a partner.
 - Backups: Render's paid Postgres plans include daily backups. The free plan has none and expires after 30 days; upgrade before real data matters.
 
 ## Background jobs (API, `src/outreach/outreach.scheduler.ts`)

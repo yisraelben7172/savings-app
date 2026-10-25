@@ -34,6 +34,7 @@ export type Offer = {
   speedRank: number;
   bestPrice: boolean;
   lastCheckedAt: string;
+  attribution: string | null; // required by the data source's agreement, shown with the price
   goUrl: string;
 };
 

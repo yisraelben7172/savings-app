@@ -19,6 +19,13 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 - **Done**: the unsubscribe page only echoes fixed text.
 - **Done**: request size limits: JSON 64 KB, form bodies 16 KB (413 above). Security headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, no `X-Powered-By`.
 
+## Catalog data
+- **Done**: sources start as AWAITING_APPROVAL and collect nothing until a complete permission record is saved and activated by a named person. Disabling a source hides its offers immediately.
+- **Done**: feed uploads only on `/api/admin/sources/:id/import`, 5 MB max, and the admin key is checked before the body is read. Website uploads are capped at 4 MB (Vercel's request limit is about 4.5 MB).
+- **Done**: every product link must be https on the store's own domain; rows that aren't are rejected at import and re-checked at click time.
+- **Done**: data is only sent to Claude when its source allows AI use (`aiUseAllowed`, default off).
+- **Done**: price-history retention per source (`retentionDays`).
+
 ## Redirects (affiliate links)
 - **Done**: `/api/go/:offerId` never takes a URL from the request. It loads the stored offer URL, re-checks the trust gate, requires https on the merchant's own domain, then redirects. No open redirect.
 

@@ -26,7 +26,7 @@ const ASKS = [
 
 /** The hero's live price check: today's biggest drop, with its price history. */
 async function PriceCheck() {
-  const top = (await getDeals({ sort: "discount", limit: 6 }).catch(() => [])).find((d) => d.storeCount > 0);
+  const top = (await getDeals({ sort: "discount", limit: 6 }).catch(() => [])).find((d) => d.storeCount > 0 && d.saved > 0);
   const deal = top ? await getDeal(top.slug).catch(() => null) : null;
   if (!deal || deal.priceHistory.length < 2) return <PriceCheckSkeleton />;
   const { days, isLowest, last } = priceFacts(deal.priceHistory);

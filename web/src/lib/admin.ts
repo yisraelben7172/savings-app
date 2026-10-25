@@ -57,12 +57,13 @@ export async function requireAdmin() {
 }
 
 /** Calls the API's /api/admin/* routes. Checks the session first, so every admin read is protected. */
-export async function adminApi<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function adminApi<T>(path: string, init: { method?: string; body?: unknown; csv?: string } = {}): Promise<T> {
   await requireAdmin();
+  const contentType = init.csv !== undefined ? "text/csv" : init.body !== undefined ? "application/json" : undefined;
   const res = await fetch(`${API_URL}/api/admin${path}`, {
     method: init.method ?? "GET",
-    headers: { "x-admin-key": process.env.ADMIN_API_KEY!, ...(init.body !== undefined ? { "content-type": "application/json" } : {}) },
-    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+    headers: { "x-admin-key": process.env.ADMIN_API_KEY!, ...(contentType ? { "content-type": contentType } : {}) },
+    body: init.csv ?? (init.body !== undefined ? JSON.stringify(init.body) : undefined),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -155,6 +156,121 @@ export type Settings = Record<
   "paused" | "dailyLimit" | "sendStartHour" | "sendEndHour" | "followUp1Days" | "followUp2Days" | "autoPrepare" | "fromName" | "postalAddress" | "signature" | "pauseReason",
   string
 >;
+
+// ---------- catalog ----------
+
+export type Health = "UNKNOWN" | "HEALTHY" | "DEGRADED" | "FAILING";
+export type SourceStatus = "AWAITING_APPROVAL" | "ACTIVE" | "PAUSED" | "DISABLED";
+export type SourceKind = "DEMO" | "CSV_FEED" | "XML_FEED" | "RETAILER_API" | "NETWORK_API" | "MANUAL";
+
+export type Retailer = {
+  id: string;
+  slug: string;
+  name: string;
+  domain: string;
+  network: string;
+  trustScore: number;
+  approved: boolean;
+  active: boolean;
+  integrationType: "NONE" | "FEED" | "RETAILER_API" | "NETWORK_API" | "MANUAL";
+  affiliateStatus: "NOT_APPLIED" | "APPLIED" | "APPROVED" | "REJECTED";
+  supportedCategories: string[];
+  linkCapability: string | null;
+  complianceNotes: string | null;
+  lastSyncAt: string | null;
+  health: Health;
+  healthNote: string | null;
+  offerCount: number;
+  shownOffers: number;
+  sourceCount: number;
+};
+
+export type RowError = { row: number; code: string; message: string };
+
+export type IngestionRun = {
+  id: string;
+  status: "RUNNING" | "SUCCEEDED" | "PARTIAL" | "FAILED";
+  trigger: string;
+  rowsRead: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  rejected: number;
+  markedOut: number;
+  errors: RowError[] | null;
+  startedAt: string;
+  finishedAt: string | null;
+};
+
+export type Source = {
+  id: string;
+  name: string;
+  kind: SourceKind;
+  status: SourceStatus;
+  merchantId: string | null;
+  merchant: { id: string; name: string; domain: string } | null;
+  accessMethod: string | null;
+  agreementUrl: string | null;
+  permissionNotes: string | null;
+  allowedFields: string[];
+  aiUseAllowed: boolean;
+  attributionText: string | null;
+  priceFreshnessHours: number;
+  retentionDays: number | null;
+  fullSnapshot: boolean;
+  config: { columns?: Record<string, string>; categoryMap?: Record<string, string> } | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  lastRunAt: string | null;
+  health: Health;
+  healthNote: string | null;
+  importable: boolean;
+  offerCount?: number;
+  staleOffers?: number;
+  runs?: IngestionRun[];
+  permittableFields?: string[];
+};
+
+export type CatalogHealth = {
+  products: number;
+  productsWithoutIdentifiers: number;
+  legacyDemoDeals: number;
+  offers: number;
+  shownOffers: number;
+  staleOffers: number;
+  outOfStock: number;
+  duplicateCandidates: { brand: string | null; ids: string[]; titles: string[] }[];
+  invalidLinks: { id: string; store: string; url: string }[];
+};
+
+export const SOURCE_STATUS_LABEL: Record<SourceStatus, string> = {
+  AWAITING_APPROVAL: "Awaiting approval",
+  ACTIVE: "Active",
+  PAUSED: "Paused",
+  DISABLED: "Disabled",
+};
+
+export const SOURCE_KIND_LABEL: Record<SourceKind, string> = {
+  DEMO: "Sample data",
+  CSV_FEED: "CSV feed",
+  XML_FEED: "XML feed",
+  RETAILER_API: "Store API",
+  NETWORK_API: "Affiliate network API",
+  MANUAL: "Manual entry",
+};
+
+export const FIELD_LABEL: Record<string, string> = {
+  title: "Product title",
+  price: "Price",
+  url: "Product link",
+  list_price: "Was / list price",
+  brand: "Brand",
+  identifiers: "GTIN / UPC / MPN",
+  description: "Description",
+  image: "Images",
+  delivery: "Delivery info",
+  attributes: "Color / size",
+};
 
 export const STATUS_LABEL: Record<PartnerStatus, string> = {
   NEW: "Not contacted",

@@ -23,6 +23,17 @@ Rules we follow for every provider:
 | Travelpayouts | Hotels, car rentals, flights from travel brands | Not applied | Apply (automated review) |
 | Ticketmaster / SeatGeek | Events; partner programs mostly run through Impact | Not applied | Apply via the network |
 
+## Fastest legitimate path to real data: partner CSV feeds
+
+A brand or store can send us a product file (most e-commerce platforms export one). Steps:
+
+1. Admin → Stores: add the store (domain is required; every product link must be on it). It stays hidden until you approve it and give it a trust score of 70+.
+2. Admin → Data sources → Add a source (CSV feed, linked to the store). Record how the data is provided, what was agreed, which fields you may show, whether the AI assistant may use it, how long prices stay current, and how long to keep price history.
+3. Activate it (Vault refuses until the record is complete), then upload the file. Each rejected row is listed with the reason.
+4. Re-upload whenever the partner sends a new file. Re-imports never duplicate anything; items missing from a full-catalog file are marked out of stock; prices older than the freshness window disappear from the site.
+
+Network product catalogs (Impact, CJ, Awin, Rakuten) usually come as CSV/XML files too, so once a network approves Vault for a brand, its catalog export can go through the same path where the network's terms allow it.
+
 ## What the code supports today
 
 - `Merchant.network` and `Merchant.affiliateTag` fields, and the redirect in `src/clicks/clicks.controller.ts`, which adds the `tag` parameter **only** for `network = "amazon"` merchants, and only to URLs that pass the domain check.

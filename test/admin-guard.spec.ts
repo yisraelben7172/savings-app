@@ -1,5 +1,6 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { AdminGuard } from '../src/admin/admin.guard';
+import type { NextFunction, Request, Response } from 'express';
+import { AdminGuard, requireAdminKeyEarly } from '../src/admin/admin.guard';
 
 const ctx = (key?: string) =>
   ({ switchToHttp: () => ({ getRequest: () => ({ header: (n: string) => (n === 'x-admin-key' ? key : undefined) }) }) }) as unknown as ExecutionContext;
@@ -26,5 +27,20 @@ describe('AdminGuard', () => {
     expect(() => guard.canActivate(ctx(KEY.slice(1)))).toThrow(UnauthorizedException);
     expect(() => guard.canActivate(ctx(KEY + 'x'))).toThrow(UnauthorizedException);
     expect(guard.canActivate(ctx(KEY))).toBe(true);
+  });
+
+  it('rejects feed uploads before reading the body unless the key is right', () => {
+    process.env.ADMIN_API_KEY = KEY;
+    const run = (key?: string) => {
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response & { status: jest.Mock };
+      const next = jest.fn() as NextFunction & jest.Mock;
+      requireAdminKeyEarly({ header: () => key } as unknown as Request, res, next);
+      return { res, next };
+    };
+    const bad = run('wrong');
+    expect(bad.res.status).toHaveBeenCalledWith(401);
+    expect(bad.next).not.toHaveBeenCalled();
+    const good = run(KEY);
+    expect(good.next).toHaveBeenCalled();
   });
 });
