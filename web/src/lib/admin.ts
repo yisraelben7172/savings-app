@@ -243,6 +243,88 @@ export type CatalogHealth = {
   invalidLinks: { id: string; store: string; url: string }[];
 };
 
+// ---------- affiliate ----------
+
+export type ProgramStatus = "NOT_APPLIED" | "APPLIED" | "APPROVED" | "REJECTED" | "PAUSED";
+export type LinkMethod = "NONE" | "AMAZON_TAG" | "DEEPLINK_TEMPLATE";
+export type CommissionStatus = "PENDING" | "APPROVED" | "REVERSED" | "PAID";
+
+export type CommissionRow = {
+  id: string;
+  externalId: string;
+  clickId: string | null;
+  status: CommissionStatus;
+  saleAmount: string | null;
+  amount: string;
+  occurredAt: string;
+};
+
+export type CommissionImportRun = {
+  id: string;
+  createdAt: string;
+  rowsRead: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  rejected: number;
+  matched: number;
+  errors: { row: number; code: string; message: string }[] | null;
+};
+
+export type Program = {
+  id: string;
+  merchantId: string;
+  merchant: { id: string; name: string; domain: string };
+  network: string;
+  name: string;
+  status: ProgramStatus;
+  linkMethod: LinkMethod;
+  accountTag: string | null;
+  linkTemplate: string | null;
+  allowedTrackingHosts: string[];
+  disclosureText: string | null;
+  commissionNotes: string | null;
+  applicationUrl: string | null;
+  appliedAt: string | null;
+  approvedAt: string | null;
+  notes: string | null;
+  reportConfig: { columns?: Record<string, string>; statusMap?: Record<string, string> } | null;
+  imports?: CommissionImportRun[];
+  commissions?: CommissionRow[];
+};
+
+export type AffiliateSummary = {
+  plainClicks: number;
+  programs: {
+    id: string;
+    name: string;
+    network: string;
+    status: ProgramStatus;
+    linkMethod: LinkMethod;
+    merchant: { name: string; domain: string };
+    clicks30: { tracked: number; fallback: number; plain: number };
+    commissions: Partial<Record<CommissionStatus, { count: number; amount: number; sales: number }>>;
+  }[];
+};
+
+export const PROGRAM_STATUS_LABEL: Record<ProgramStatus, string> = {
+  NOT_APPLIED: "Not applied",
+  APPLIED: "Applied, waiting",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  PAUSED: "Paused",
+};
+
+export const LINK_METHOD_LABEL: Record<LinkMethod, string> = {
+  NONE: "None yet (plain links)",
+  AMAZON_TAG: "Amazon tracking ID",
+  DEEPLINK_TEMPLATE: "Network link template",
+};
+
+export const COMMISSION_LABEL: Record<CommissionStatus, string> = { PENDING: "Pending", APPROVED: "Approved", REVERSED: "Reversed", PAID: "Paid" };
+
+export const usd = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
 export const SOURCE_STATUS_LABEL: Record<SourceStatus, string> = {
   AWAITING_APPROVAL: "Awaiting approval",
   ACTIVE: "Active",
@@ -283,6 +365,12 @@ export const STATUS_LABEL: Record<PartnerStatus, string> = {
 };
 
 export const STEP_LABEL = ["First email", "Follow-up 1", "Follow-up 2"];
+
+/** Date only (US Eastern), for records like commissions where the day matters more than the time. */
+export function day(iso: string | null | undefined) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+}
 
 export function when(iso: string | null | undefined) {
   if (!iso) return "";

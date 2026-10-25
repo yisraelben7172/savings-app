@@ -32,8 +32,8 @@ services:
       # For a service that already exists, add new ones by hand in the Render dashboard.
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: AMAZON_ASSOCIATE_TAG
-        sync: false
+      - key: CLICK_RETENTION_DAYS # how long click events are kept (default 730)
+        value: "730"
       - key: ADMIN_API_KEY # same value as in Vercel; 24+ random characters
         sync: false
       - key: WEB_URL # the Vercel site address, for links in Telegram alerts

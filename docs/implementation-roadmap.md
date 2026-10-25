@@ -32,13 +32,18 @@ Depends on: P1 tests.
 - [ ] Scheduled imports (pull a feed URL on a timer): planned once a partner offers a feed URL; uploads are manual today.
 - [ ] Remove the demo catalog: a cleanup step that deletes `src_demo_seed` data and clears the "samples" notice once real sources cover the site.
 
-## Priority 3: Affiliate monetization
-Depends on: P2 (retailers, sources). Real links need program approval (*awaiting approval*).
-- [ ] `AffiliateProgram` records (network, status, required params, sub-ID rules).
-- [ ] Affiliate link service with one adapter per network; outcome logging; no affiliate params on arbitrary URLs.
-- [ ] Richer click events: anonymous session ID (consented), placement, recommendation/session ID; documented retention.
-- [ ] Conversion and commission import from network reports, with pending/approved/reversed/paid states. Admin shows clicks and commissions separately.
-- [ ] Required disclosures per program (Amazon wording when approved).
+## Priority 3: Affiliate monetization (built 2026-10-25; *awaiting program approvals* before it earns anything)
+Depends on: P2 (retailers, sources). Real links need program approval.
+- [x] `AffiliateProgram` records: network, status, link method, account tag, link template, allowed tracking hosts, required disclosure, verified commission terms, report column/status mapping. Admin → Affiliate links.
+- [x] Link service (`src/affiliate/link-builder.ts`): tracked links only for APPROVED programs; Amazon via the documented `tag` parameter; every other network via the exact template pasted from its dashboard (placeholders `{url}`, `{urlEncoded}`, `{clickId}`), validated on save and re-checked at click time (https, allowed host); fallback to the plain store link is recorded. No affiliate parameters on arbitrary URLs, no destination from the request, no guessed network formats. "Check the link" preview in the admin.
+- [x] Richer click events: program, outcome (tracked/plain/fallback), destination host, placement, recommendation label, optional session ID column (nothing sets it until a consent banner exists). No IP or user agent. Retention: nightly delete after `CLICK_RETENTION_DAYS` (default 730).
+- [x] Commission import: CSV reports, idempotent by network transaction ID, owner-editable status mapping, unknown statuses rejected, status never moves backwards, matching to clicks through the sub-ID (same program only). Admin shows clicks and commissions separately, with pending / approved / paid / reversed kept apart.
+- [x] Required disclosures per program, shown next to that store's links.
+- [x] Tests: link builder, redirect (plain/tracked/fallback/refusals), report parsing, and database tests for the full click → tracked link → report → match loop, re-imports, status rules, cross-program isolation, retention.
+- [ ] Network-specific report downloads/APIs (pull reports automatically instead of uploading CSVs): after a network approves us and we read its reporting docs.
+- [ ] Per-network conversion postbacks, if a network supports them: same.
+- [ ] Consent banner and anonymous session IDs on clicks (needed before using `sessionId`).
+- [ ] Open question for the owner: Amazon's required Associate wording and any restrictions on how Amazon links may be presented (to confirm from the current Associates agreement before enabling).
 
 ## Priority 4: AI shopping intelligence
 Depends on: P2 catalog, P3 links.

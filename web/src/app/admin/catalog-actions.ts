@@ -53,8 +53,6 @@ export async function updateRetailer(id: string, _: ActionState, f: FormData) {
           approved: f.get("approved") === "on",
           trustScore: Number(str(f, "trustScore") || 0),
           integrationType: str(f, "integrationType"),
-          affiliateStatus: str(f, "affiliateStatus"),
-          linkCapability: str(f, "linkCapability") || undefined,
           complianceNotes: str(f, "complianceNotes") || undefined,
           supportedCategories: f.getAll("supportedCategories").map(String),
         },

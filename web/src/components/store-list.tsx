@@ -23,13 +23,14 @@ function minutesAgo(iso: string, now: number) {
 }
 
 /** Every verified store for a deal, sortable; the cheapest is marked "Best price". */
-export function StoreList({ offers, priceUnit }: { offers: Offer[]; priceUnit: string | null }) {
+export function StoreList({ offers, priceUnit, placement }: { offers: Offer[]; priceUnit: string | null; placement: string }) {
   const [sortBy, setSortBy] = useState<SortBy>("price");
   const now = useNowMinute();
   const cheapest = Math.min(...offers.map((o) => o.price));
   const sorted = [...offers].sort((a, b) =>
-    sortBy === "price" ? a.price - b.price : sortBy === "rating" ? b.rating - a.rating : a.speedRank - b.speedRank || a.price - b.price,
+    sortBy === "price" ? a.price - b.price : sortBy === "rating" ? (b.rating ?? 0) - (a.rating ?? 0) : a.speedRank - b.speedRank || a.price - b.price,
   );
+  const disclosures = [...new Set(offers.map((o) => o.disclosure).filter((d): d is string => !!d))];
   const latest = offers.reduce<string | null>((acc, o) => (!acc || o.lastCheckedAt > acc ? o.lastCheckedAt : acc), null);
 
   return (
@@ -71,7 +72,7 @@ export function StoreList({ offers, priceUnit }: { offers: Offer[]; priceUnit: s
                   {money(o.price)}
                   {priceUnit && <small>{priceUnit}</small>}
                 </div>
-                <a className={`btn st-go${best ? " primary" : ""}`} href={goHref(o)} rel="nofollow sponsored noopener" target="_blank">
+                <a className={`btn st-go${best ? " primary" : ""}`} href={goHref(o, placement)} rel="nofollow sponsored noopener" target="_blank">
                   Go to {o.store}
                 </a>
               </div>
@@ -83,6 +84,7 @@ export function StoreList({ offers, priceUnit }: { offers: Offer[]; priceUnit: s
         <ShieldCheck size={15} aria-hidden />
         <span>
           Every store here passed our checks.{latest && now ? ` Prices checked ${minutesAgo(latest, now)}` : " Prices"} and can change at the store. We may earn a commission.
+          {disclosures.map((d) => ` ${d}`)}
         </span>
       </div>
     </>

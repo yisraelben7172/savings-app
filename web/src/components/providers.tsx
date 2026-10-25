@@ -117,7 +117,7 @@ function StoreSheet({ state, onClose }: { state: { slug: string; deal?: DealDeta
         </div>
         {d ? (
           <>
-            <StoreList offers={d.offers} priceUnit={d.priceUnit} />
+            <StoreList offers={d.offers} priceUnit={d.priceUnit} placement="web-picker" />
             <Link className="sh-more" href={`/deals/${d.slug}`}>
               See price history and details
             </Link>

@@ -15,7 +15,7 @@ API (`.env` locally, Render online). Names only; see `.env.example`.
 | `PORT` | Local only (Render sets it) |
 | `CORS_ORIGIN` | Which websites may call the API from browsers |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | AI assistant (falls back to keyword search without a key) |
-| `AMAZON_ASSOCIATE_TAG` | Amazon links, once approved |
+| `CLICK_RETENTION_DAYS` | How long click events are kept before the nightly cleanup deletes them (default 730, minimum 30). Commission records are kept. |
 | `ADMIN_API_KEY` | Admin API. Same value in the website's environment |
 | `OUTREACH_SECRET` | Signs unsubscribe links |
 | `WEB_URL` | Links in Telegram alerts |

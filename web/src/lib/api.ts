@@ -27,7 +27,7 @@ export type Offer = {
   store: string;
   storeSlug: string;
   storeColor: Pastel;
-  rating: number;
+  rating: number | null;
   verified: boolean;
   price: number;
   deliveryNote: string | null;
@@ -35,6 +35,7 @@ export type Offer = {
   bestPrice: boolean;
   lastCheckedAt: string;
   attribution: string | null; // required by the data source's agreement, shown with the price
+  disclosure: string | null; // wording an approved affiliate program requires next to its links
   goUrl: string;
 };
 
@@ -88,8 +89,8 @@ export async function sendChat(message: string, history: { role: "user" | "assis
 }
 
 /** Outbound store links always go through the API so clicks are logged and tagged. */
-export function goHref(offer: Pick<Offer, "goUrl">) {
-  return `${API_URL}${offer.goUrl}`;
+export function goHref(offer: Pick<Offer, "goUrl">, placement?: string) {
+  return `${API_URL}${offer.goUrl}${placement ? `?src=${encodeURIComponent(placement)}` : ""}`;
 }
 
 export function money(v: number) {

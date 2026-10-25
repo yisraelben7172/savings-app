@@ -83,7 +83,7 @@ async function DealBody({ params }: Props) {
           </div>
           <div className="panel">
             <h2>Choose where to buy</h2>
-            <StoreList offers={deal.offers} priceUnit={deal.priceUnit} />
+            <StoreList offers={deal.offers} priceUnit={deal.priceUnit} placement="web-deal-page" />
           </div>
         </div>
       </div>

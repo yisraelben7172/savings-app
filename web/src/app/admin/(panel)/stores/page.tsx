@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ActionForm, Submit } from "@/components/admin/forms";
 import { adminApi, when, type Retailer } from "@/lib/admin";
 import { createRetailer, updateRetailer } from "../../catalog-actions";
@@ -6,7 +7,6 @@ import { createRetailer, updateRetailer } from "../../catalog-actions";
 export const metadata: Metadata = { title: "Stores" };
 
 const CATEGORIES = ["electronics", "clothing", "beauty", "hotels", "car-rentals", "concerts", "home", "flights"];
-const AFFILIATE = { NOT_APPLIED: "Not applied", APPLIED: "Applied", APPROVED: "Approved", REJECTED: "Rejected" };
 const INTEGRATION = { NONE: "No data connection", FEED: "Feed file", RETAILER_API: "Store API", NETWORK_API: "Affiliate network API", MANUAL: "Manual" };
 const HEALTH = { UNKNOWN: "Not synced yet", HEALTHY: "Healthy", DEGRADED: "Some errors", FAILING: "Failing" };
 const HEALTH_PILL = { UNKNOWN: "NEW", HEALTHY: "SENT", DEGRADED: "DRAFT", FAILING: "FAILED" };
@@ -81,16 +81,6 @@ export default async function StoresPage() {
                     <input id={`t-${s.id}`} name="trustScore" type="number" min={0} max={100} defaultValue={s.trustScore} />
                   </div>
                   <div className="field">
-                    <label htmlFor={`a-${s.id}`}>Affiliate program</label>
-                    <select id={`a-${s.id}`} name="affiliateStatus" defaultValue={s.affiliateStatus}>
-                      {Object.entries(AFFILIATE).map(([v, l]) => (
-                        <option key={v} value={v}>
-                          {l}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="field">
                     <label htmlFor={`i-${s.id}`}>Data connection</label>
                     <select id={`i-${s.id}`} name="integrationType" defaultValue={s.integrationType}>
                       {Object.entries(INTEGRATION).map(([v, l]) => (
@@ -101,8 +91,10 @@ export default async function StoresPage() {
                     </select>
                   </div>
                   <div className="field">
-                    <label htmlFor={`l-${s.id}`}>How tracked links are made</label>
-                    <input id={`l-${s.id}`} name="linkCapability" defaultValue={s.linkCapability ?? ""} placeholder="Fill in once verified with the network" maxLength={80} />
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>Affiliate links</span>
+                    <Link href="/admin/affiliate" className="btn small-btn" style={{ width: "max-content" }}>
+                      Manage this store&apos;s programs
+                    </Link>
                   </div>
                   <fieldset className="field full" style={{ border: 0, padding: 0, margin: 0 }}>
                     <legend style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Categories it sells</legend>

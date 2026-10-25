@@ -51,7 +51,25 @@ The brief suggests `lib/ai`, `lib/catalog`, `lib/retailers`, `lib/affiliate`... 
 
 - **Catalog foundation (2026-10-25)**: `Product` (canonical item, matched only by GTIN or brand + MPN), `Deal` (the listing for one product; `productId` null for old demo deals), `Offer` (one store's price: source, SKU, list price, freshness via `staleAfter`), `DataSource` (where data comes from + its permission record), `IngestionRun` (every import with counts and row errors), retailer registry fields on `Merchant`.
 
-Gaps against the brief (see the roadmap): no affiliate program records, no conversion/commission records, no audit log, no agent runs, no importers beyond CSV feeds.
+- **Affiliate (2026-10-25)**: `AffiliateProgram` (per store and network), `Click` (outcome, program, host, placement), `Commission` (what a network reported, status kept separate), `CommissionImport` (every report upload).
+
+Gaps against the brief (see the roadmap): no audit log, no agent runs, no importers beyond CSV feeds, no network report APIs.
+
+## Affiliate links (`src/affiliate`, `src/clicks`)
+
+```
+ shopper taps "Go to store" ──► GET /api/go/:offerId?src=web-picker
+   load our stored offer + the merchant's APPROVED program        (destination never comes from the request)
+   trust gate + https-on-merchant-domain check
+   click ID = 24 random hex characters
+   buildTrackedUrl(program, offer.url, clickId)                   (pure function, src/affiliate/link-builder.ts)
+       AMAZON_TAG        → add tag=<account tag>
+       DEEPLINK_TEMPLATE → fill {url} {urlEncoded} {clickId}; https + allowed host or refuse
+   record Click (TRACKED | PLAIN | FALLBACK) → 302 to the tracked or plain link
+
+ later: network commission report (CSV) ──► POST /api/admin/programs/:id/commissions/import
+   rows keyed by the network's transaction ID; sub-ID == click ID ties a sale back to a click
+```
 
 ## Catalog ingestion (`src/catalog`)
 

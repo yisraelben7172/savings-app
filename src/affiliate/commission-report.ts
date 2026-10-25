@@ -90,7 +90,8 @@ export function parseReportRow(
   if (rawAmount < 0) status = 'REVERSED';
 
   const dateText = get('date');
-  const occurredAt = new Date(dateText);
+  // A date with no time ("2026-10-24") means that calendar day; noon UTC keeps it on that day across US time zones.
+  const occurredAt = new Date(/^\d{4}-\d{2}-\d{2}$/.test(dateText) ? `${dateText}T12:00:00Z` : dateText);
   if (!dateText || Number.isNaN(occurredAt.getTime())) return fail('BAD_DATE', `Date "${dateText}" isn't valid.`);
   if (occurredAt.getTime() > now.getTime() + 864e5) return fail('FUTURE_DATE', 'The date is in the future.');
 

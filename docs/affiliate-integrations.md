@@ -36,10 +36,31 @@ Network product catalogs (Impact, CJ, Awin, Rakuten) usually come as CSV/XML fil
 
 ## What the code supports today
 
-- `Merchant.network` and `Merchant.affiliateTag` fields, and the redirect in `src/clicks/clicks.controller.ts`, which adds the `tag` parameter **only** for `network = "amazon"` merchants, and only to URLs that pass the domain check.
-- All other networks are an explicit TODO in that controller: each network has its own deep-link format, which we will implement from that network's documentation once approved.
+All of this is built and tested, and none of it is connected to a real network yet (no program is approved).
 
-Planned (roadmap Priority 3): a `src/affiliate` module with one adapter per network behind a common interface, `AffiliateProgram` records (status, required parameters, sub-ID rules), link-generation outcome logging, and conversion/commission import from network reports.
+### Affiliate programs (Admin → Affiliate links)
+One record per store and network (`AffiliateProgram`): status (not applied, applied, **approved**, rejected, paused), how tracked links are made, a public account tag, the tracking hosts links may go through, the wording the program requires next to its links, verified commission terms, and how to read its commission report.
+
+**Tracked links are only ever made for APPROVED programs**, through one of two methods:
+
+1. **Amazon tracking ID** (`AMAZON_TAG`): adds your Associates tracking ID as the `tag` parameter, replacing any existing tag. This is Amazon's documented method; there is no Amazon environment variable any more, the ID lives on the approved program.
+2. **Network link template** (`DEEPLINK_TEMPLATE`): you copy the exact deep-link format from the network's own dashboard once approved and paste it in, using `{url}` or `{urlEncoded}` for the product page and `{clickId}` for the sub-ID. Vault does **not** know or guess any network's format. On save, Vault checks the template has those placeholders and that its host is one you listed as an allowed tracking host. At click time it re-checks that the finished link is https and on an allowed host, or it falls back to the plain store link (and records the fallback).
+
+Use Admin → Affiliate links → "Check the link" to see exactly what link a shopper would get for a sample product page, and compare it against the network's documentation before relying on it.
+
+### Clicks and commissions
+- Every "Go to store" click is logged with: offer, program, outcome (tracked / plain / fallback), where it went (host only), placement (web-picker, web-deal-page...), an optional recommendation label, and an optional anonymous session ID (not collected yet: it will only be set after a consent banner exists). **No IP address and no user agent are stored.** Clicks are deleted after `CLICK_RETENTION_DAYS` (730).
+- The click's ID is passed to the network as the sub-ID. When you import a network's commission report (CSV), rows are matched back to clicks through that sub-ID, only within the same program. Unmatched rows are kept but marked not matched.
+- Commission records hold only what the network reports, with its status kept separate: pending, approved, reversed, paid. Vault never estimates earnings. Re-importing overlapping reports is safe (keyed by the network's transaction ID) and a status never moves backwards (paid stays paid, reversed is final).
+- A click is a visit, not a sale: no screen presents click counts as revenue, and Vault never promises that a click earns a commission.
+
+### Disclosures
+An approved program's required wording (for example Amazon's Associate statement) is saved on the program and shown next to its store links in the store picker and deal page, in addition to the site-wide "We may earn a commission" line.
+
+### Setting up a program once a network approves you
+1. Admin → Affiliate links → Add a program (store + network), set it to Applied with your application link when you apply.
+2. When approved: copy the link format and your account details from the network's dashboard; paste the template (or Amazon ID), allowed tracking host(s) and required disclosure; use "Check the link"; then set the status to Approved.
+3. Find the network's commission report export; if its column or status names differ, enter them under the program's report settings. Import a report after the first sales are reported.
 
 ## Amazon: compliance notes (to verify against current documents)
 
@@ -55,7 +76,7 @@ Things we must confirm for this specific account before building, and must not a
 - Whether prices and availability may be shown, how fresh they must be, and the required "price as of" style attribution.
 - Caching limits for product data and images.
 - Whether Amazon content may be processed by an AI model (our assistant sends search results to Claude). **Until confirmed, Amazon-sourced content must be excluded from the assistant's tool results.** The assistant can still link to Amazon offers whose facts came from a source that allows it.
-- Required disclosures (the site already shows "We may earn a commission"; Amazon requires specific Associate wording).
+- Required disclosures (the site already shows "We may earn a commission"; Amazon requires specific Associate wording: save it on the Amazon program's disclosure field once confirmed).
 - Rules on links in emails and offline (the outreach research found Amazon prohibits Associate links in emails; outreach emails never contain affiliate links).
 
 If the desired design is not allowed, we document the limit here and choose a compliant alternative (for example, a plain link without product data, or another network).

@@ -8,7 +8,13 @@ const row = (over: Record<string, string> = {}) => ({ transaction_id: 'T1', sub_
 describe('commission report rows', () => {
   it('parses a good row', () => {
     const r = parseReportRow(row(), cols, null, NOW);
-    expect('ok' in r && r.ok).toEqual({ externalId: 'T1', subId: 'abc123', status: 'APPROVED', saleAmount: 120, amount: 6, currency: 'USD', occurredAt: new Date('2026-10-20') });
+    // A date without a time is that calendar day (stored at noon UTC so US time zones show the same day).
+    expect('ok' in r && r.ok).toEqual({ externalId: 'T1', subId: 'abc123', status: 'APPROVED', saleAmount: 120, amount: 6, currency: 'USD', occurredAt: new Date('2026-10-20T12:00:00Z') });
+  });
+
+  it('keeps full timestamps as given', () => {
+    const r = parseReportRow(row({ date: '2026-10-20T03:15:00Z' }), cols, null, NOW);
+    expect('ok' in r && r.ok.occurredAt).toEqual(new Date('2026-10-20T03:15:00Z'));
   });
 
   it('maps common network statuses, and lets a program override them', () => {

@@ -75,10 +75,20 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Demo data lives in DataSource `src_demo_seed`. Cards hide the "% off"/"You keep" when there's no stated discount.
 - Tests: `npm test` (unit) and `npm run test:int` (real DB, schema vault_test). Local browser-pane note: if the pane isn't visible on screen, streamed pages stay on their skeleton (requestAnimationFrame is paused); that's not an app bug.
 
+## Affiliate links and commissions (Priority 3, built 2026-10-25; nothing approved yet, so nothing earns)
+- Models: AffiliateProgram (per store + network), Click (program, outcome TRACKED/PLAIN/FALLBACK, destinationHost, placement `source`, recommendationId, optional sessionId), Commission, CommissionImport. Migration 20261025180000_affiliate_programs; rollback SQL in prisma/rollbacks/.
+- Rule: tracked links only for APPROVED programs (src/affiliate/link-builder.ts). Amazon = documented `tag` parameter from the program's account tag (the old AMAZON_ASSOCIATE_TAG env var is gone). Every other network = the exact link template the owner pastes from the network's dashboard, with {url}/{urlEncoded}/{clickId}, https, and an allowed tracking host. NEVER guess a network's link format or invent parameters. Failure falls back to the plain store link and is recorded.
+- The click ID is the sub-ID. Commission reports (CSV, Admin → Affiliate links) match back to clicks through it. Only reported amounts are stored; statuses pending/approved/paid/reversed are kept separate and never move backwards. Click counts are visits, not sales: never show them as revenue.
+- Clicks store no IP/user agent; sessionId stays empty until a consent banner exists; clicks deleted after CLICK_RETENTION_DAYS (730).
+- An approved program's required disclosure text is shown next to its store links (store picker + deal page).
+- Admin → Stores no longer holds affiliate status or link method; those live on the program.
+- Tests now: 95 unit + 15 database integration.
+
 ## Next steps
 1. Owner: finish the Render Blueprint, send the vault-api address; in Vercel set NEXT_PUBLIC_API_URL, ADMIN_API_KEY (same as Render), ADMIN_PASSWORD, then redeploy. Add ADMIN_API_KEY, WEB_URL (and later Gmail/Telegram values) in Render.
-2. Owner: get a first real feed (a brand's product CSV, or a network catalog once approved) and onboard it via Admin → Stores and Data sources.
-3. Roadmap Priority 3: affiliate program records, per-network link service, richer click events, commission import. Then 4 (typed shopping requests, search, comparisons), 5 (agents).
-4. Later: scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
+2. Owner: get a first real feed (a brand's product CSV, or a network catalog once approved) and onboard it via Admin → Stores and Data sources. Apply to affiliate networks; once approved, set up the program in Admin → Affiliate links (see docs/affiliate-integrations.md).
+3. Owner: confirm Amazon's required Associate wording and link-presentation rules before enabling the Amazon program.
+4. Roadmap Priority 4: typed shopping requests, search, comparisons, ranking that ignores commission, evaluation set, AI cost logging. Then 5 (agents).
+5. Later: network report APIs, consent banner + session IDs, scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y

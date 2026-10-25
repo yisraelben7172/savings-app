@@ -28,6 +28,10 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 
 ## Redirects (affiliate links)
 - **Done**: `/api/go/:offerId` never takes a URL from the request. It loads the stored offer URL, re-checks the trust gate, requires https on the merchant's own domain, then redirects. No open redirect.
+- **Done**: tracked links exist only for APPROVED programs. A network template must contain `{url}`/`{urlEncoded}` and `{clickId}`, and the finished link must be https on a host the owner listed; anything else is refused when saved and again at click time, and the shopper gets the plain store link (recorded as a fallback). Placement and recommendation labels from the query string are limited to short simple tokens.
+- **Done**: no secrets in program records: only public account tags and templates. Network API keys, if ever needed, go in the API's environment.
+- **Done**: click events store no IP address or user agent; the session ID column stays empty until consent exists; clicks are deleted after `CLICK_RETENTION_DAYS` (730). Commission records are financial records and are kept.
+- **Done**: commission imports are admin-only, 5 MB, key checked before the body is read, idempotent, and can't move a status backwards.
 
 ## AI safety
 - **Done**: Claude can only call `search_deals`, which reads trusted deals; it cannot run SQL, shell or HTTP. URLs are stripped from replies. Max 4 tool turns per message; messages capped at 1,000 characters and history at 8 turns.
@@ -45,7 +49,7 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 ## Privacy and retention
 - **Done**: clicks store offer, time and source; no IP addresses or user agents are logged.
 - **Done**: assistant conversations are not stored.
-- **Planned**: retention periods (clicks 24 months, inbound outreach email 24 months, suppression list kept indefinitely as required) and a deletion job.
+- **Partial**: click retention is automatic (24 months, nightly job). Still planned: retention for inbound outreach email (24 months) and a user-data deletion job once shopper accounts exist. The suppression list is kept indefinitely, as required.
 
 ## Dependencies
 - 2026-10-25: `npm audit` on the API found high-severity advisories in multer (via @nestjs/platform-express) and deepmerge-ts (via the Prisma CLI). Fixed: NestJS 11.2.8 and an npm override pinning multer 2.5.0 (we don't accept uploads anyway). Remaining: deepmerge-ts, fixed only in Prisma 7 (major upgrade, planned); it affects the Prisma CLI's config loading, not request handling. The website had no advisories.
