@@ -53,29 +53,30 @@ enum HealthStatus {
 
 // A store (the retailer registry). Only approved merchants with trustScore >= 70 are ever shown.
 model Merchant {
-  id                  String          @id @default(cuid())
-  slug                String          @unique
+  id                  String             @id @default(cuid())
+  slug                String             @unique
   name                String
-  domain              String          @unique // links must point at this domain
+  domain              String             @unique // links must point at this domain
   network             String // amazon, ebay, impact, cj, expedia, booking, travelpayouts...
   affiliateTag        String? // e.g. Amazon associate tag (not a secret)
-  trustScore          Int             @default(0)
-  approved            Boolean         @default(false)
+  trustScore          Int                @default(0)
+  approved            Boolean            @default(false)
   rating              Float?
-  color               String          @default("sky")
-  active              Boolean         @default(true)
-  integrationType     IntegrationType @default(NONE)
-  affiliateStatus     AffiliateStatus @default(NOT_APPLIED)
-  supportedCategories String[]        @default([])
+  color               String             @default("sky")
+  active              Boolean            @default(true)
+  integrationType     IntegrationType    @default(NONE)
+  affiliateStatus     AffiliateStatus    @default(NOT_APPLIED)
+  supportedCategories String[]           @default([])
   linkCapability      String? // how tracked links are made, e.g. "amazon-tag", "impact-deeplink" (once verified)
   complianceNotes     String?
   lastSyncAt          DateTime?
-  health              HealthStatus    @default(UNKNOWN)
+  health              HealthStatus       @default(UNKNOWN)
   healthNote          String?
   offers              Offer[]
   sources             DataSource[]
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  programs            AffiliateProgram[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
 enum SourceKind {
@@ -235,16 +236,123 @@ model Offer {
   @@index([staleAfter])
 }
 
+enum ClickOutcome {
+  TRACKED // sent through an approved program's tracking link
+  PLAIN // sent to the store's own page, no affiliate tracking (no approved program)
+  FALLBACK // a tracked link was expected but could not be built; sent plain
+}
+
+// One "Go to store" click. The click ID is also what we pass to the network as the sub-ID,
+// so commission reports can be matched back to the click. Minimal data: no IP address, no user agent.
 model Click {
-  id        String   @id @default(cuid())
-  offerId   String
-  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  source    String? // web, android, ios, assistant
-  createdAt DateTime @default(now())
+  id               String            @id @default(cuid())
+  offerId          String
+  offer            Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  userId           String?
+  user             User?             @relation(fields: [userId], references: [id])
+  source           String? // placement: web-deal-page, web-picker, assistant, android, ios...
+  sessionId        String? // anonymous visitor ID, only when the visitor consented (none collected yet)
+  recommendationId String? // assistant answer or shopping session that led here
+  programId        String?
+  program          AffiliateProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  outcome          ClickOutcome      @default(PLAIN)
+  destinationHost  String? // where we sent them, e.g. "www.bestbuy.com" or the network's tracking host
+  createdAt        DateTime          @default(now())
+  commissions      Commission[]
 
   @@index([offerId])
+  @@index([createdAt])
+  @@index([programId, createdAt])
+}
+
+enum ProgramStatus {
+  NOT_APPLIED
+  APPLIED
+  APPROVED // only approved programs ever produce tracked links
+  REJECTED
+  PAUSED
+}
+
+enum LinkMethod {
+  NONE // no verified way to make tracked links yet
+  AMAZON_TAG // Amazon Associates: adds the account's tracking ID as the "tag" parameter
+  DEEPLINK_TEMPLATE // the network's own deep-link format, pasted from its dashboard (see linkTemplate)
+}
+
+// Our relationship with one store through one affiliate network (or directly).
+// Nothing here is a secret: API keys stay in the API's environment.
+model AffiliateProgram {
+  id                   String             @id @default(cuid())
+  merchantId           String
+  merchant             Merchant           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  network              String // amazon, impact, cj, awin, rakuten, ebay, travelpayouts, direct
+  name                 String
+  status               ProgramStatus      @default(NOT_APPLIED)
+  linkMethod           LinkMethod         @default(NONE)
+  accountTag           String? // AMAZON_TAG: the Associates tracking ID. Other networks: your public account/campaign ID
+  linkTemplate         String? // DEEPLINK_TEMPLATE: exact URL from the network, with {url}/{urlEncoded} and {clickId} placeholders
+  allowedTrackingHosts String[]           @default([]) // hosts the template may point at (e.g. "goto.example-network.com")
+  disclosureText       String? // wording the program requires next to its links
+  commissionNotes      String? // verified terms only
+  applicationUrl       String?
+  appliedAt            DateTime?
+  approvedAt           DateTime?
+  notes                String?
+  reportConfig         Json? // commission report column names and status mapping
+  clicks               Click[]
+  commissions          Commission[]
+  imports              CommissionImport[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@unique([merchantId, network])
+}
+
+enum CommissionStatus {
+  PENDING // reported, not yet confirmed by the merchant
+  APPROVED // confirmed, not yet paid
+  REVERSED // returned or cancelled: not earned
+  PAID
+}
+
+// One reported sale/commission from a network report. Estimates are never stored here, only what the network reports.
+model Commission {
+  id         String           @id @default(cuid())
+  programId  String
+  program    AffiliateProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  externalId String // the network's own ID for this action; makes re-importing safe
+  clickId    String? // matched through the sub-ID we passed
+  click      Click?           @relation(fields: [clickId], references: [id], onDelete: SetNull)
+  subId      String? // what the network says we sent
+  status     CommissionStatus
+  saleAmount Decimal?         @db.Decimal(12, 2)
+  amount     Decimal          @db.Decimal(12, 2) // our commission as reported
+  currency   String           @default("USD")
+  occurredAt DateTime
+  importId   String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([programId, externalId])
+  @@index([programId, status])
+  @@index([occurredAt])
+}
+
+model CommissionImport {
+  id        String           @id @default(cuid())
+  programId String
+  program   AffiliateProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  fileHash  String
+  rowsRead  Int              @default(0)
+  created   Int              @default(0)
+  updated   Int              @default(0)
+  unchanged Int              @default(0)
+  rejected  Int              @default(0)
+  matched   Int              @default(0) // rows tied back to one of our clicks
+  errors    Json?
+  createdAt DateTime         @default(now())
+
+  @@index([programId, createdAt])
 }
 
 model PriceHistory {

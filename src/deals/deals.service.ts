@@ -97,7 +97,14 @@ export class DealsService {
       where: { AND: [{ slug }, this.visibility(tier, offerFilter)] },
       include: {
         category: true,
-        offers: { where: offerFilter, include: { merchant: true, source: { select: { attributionText: true } } }, orderBy: { price: 'asc' } },
+        offers: {
+          where: offerFilter,
+          include: {
+            merchant: { include: { programs: { where: { status: 'APPROVED', disclosureText: { not: null } }, select: { disclosureText: true }, take: 1 } } },
+            source: { select: { attributionText: true } },
+          },
+          orderBy: { price: 'asc' },
+        },
         priceHistory: { orderBy: { recordedAt: 'asc' } },
       },
     });
@@ -120,6 +127,8 @@ export class DealsService {
         bestPrice: Number(o.price) === cheapest,
         lastCheckedAt: o.lastCheckedAt,
         attribution: o.source?.attributionText ?? null,
+        // Wording an approved affiliate program requires next to its links (e.g. Amazon's Associate statement).
+        disclosure: o.merchant.programs[0]?.disclosureText ?? null,
         goUrl: `/api/go/${o.id}`,
       })),
       priceHistory: deal.priceHistory.map((p) => ({ price: Number(p.price), date: p.recordedAt })),

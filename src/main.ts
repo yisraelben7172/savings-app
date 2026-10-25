@@ -12,8 +12,13 @@ async function bootstrap() {
   // Render runs one proxy in front of us; trust exactly one hop so req.ip is the real client (used by rate limits).
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  // Feed uploads (CSV, up to 5 MB) only on the admin import route, and only after the admin key checks out.
-  app.use(/^\/api\/admin\/sources\/[^/]+\/import$/, requireAdminKeyEarly, text({ type: ['text/csv', 'text/plain'], limit: '5mb' }));
+  // CSV uploads (product feeds, commission reports; up to 5 MB) only on their admin import routes,
+  // and only after the admin key checks out.
+  app.use(
+    /^\/api\/admin\/(?:sources\/[^/]+\/import|programs\/[^/]+\/commissions\/import)$/,
+    requireAdminKeyEarly,
+    text({ type: ['text/csv', 'text/plain'], limit: '5mb' }),
+  );
   app.useBodyParser('json', { limit: '64kb' });
   app.useBodyParser('urlencoded', { extended: false, limit: '16kb' });
   app.use(securityHeaders);
