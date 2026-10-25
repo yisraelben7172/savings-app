@@ -57,7 +57,19 @@ const deals: [string, string, string, number, string | null, boolean, number, [s
     [['target', 47, 'Pick up today', 0], ['walmart', 49, 'Free delivery in 2 days', 1], ['amazon', 52, 'Free delivery in 2 days', 1]]],
 ];
 
+const DEMO_SOURCE = 'src_demo_seed';
+
 async function main() {
+  // Every demo offer is tagged with this source so it can be told apart from real data (and removed later).
+  await prisma.dataSource.upsert({
+    where: { id: DEMO_SOURCE },
+    update: {},
+    create: {
+      id: DEMO_SOURCE, name: 'Demo catalog (sample data)', kind: 'DEMO', status: 'ACTIVE', accessMethod: 'prisma/seed.ts',
+      permissionNotes: 'Our own made-up sample data for development. Not real store prices.', aiUseAllowed: true,
+      fullSnapshot: false, approvedAt: new Date(), approvedBy: 'system',
+    },
+  });
   for (const [i, [slug, name, color]] of categories.entries()) {
     await prisma.category.upsert({ where: { slug }, update: { name, color, sortOrder: i }, create: { slug, name, color, sortOrder: i } });
   }
@@ -88,8 +100,8 @@ async function main() {
       const merchant = await prisma.merchant.findUniqueOrThrow({ where: { slug: m } });
       await prisma.offer.upsert({
         where: { dealId_merchantId: { dealId: deal.id, merchantId: merchant.id } },
-        update: { price, deliveryNote, speedRank },
-        create: { dealId: deal.id, merchantId: merchant.id, price, deliveryNote, speedRank, url: urlFor[m](title) },
+        update: { price, deliveryNote, speedRank, sourceId: DEMO_SOURCE },
+        create: { dealId: deal.id, merchantId: merchant.id, price, deliveryNote, speedRank, url: urlFor[m](title), sourceId: DEMO_SOURCE },
       });
     }
     // 90 days of fake price history, ending at today's best price
@@ -98,7 +110,7 @@ async function main() {
       const pts = Array.from({ length: 12 }, (_, k) => {
         const t = k / 11;
         const price = Math.round((original * (0.95 - 0.1 * Math.sin(k)) * (1 - t) + best * t) * 100) / 100;
-        return { dealId: deal.id, price, recordedAt: new Date(Date.now() - (90 - k * 8) * 864e5) };
+        return { dealId: deal.id, price, sourceId: DEMO_SOURCE, recordedAt: new Date(Date.now() - (90 - k * 8) * 864e5) };
       });
       await prisma.priceHistory.createMany({ data: pts });
     }

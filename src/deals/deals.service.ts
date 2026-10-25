@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { trustedOffer } from './trust';
+import { aiAllowedOffer, cardPrices, trustedOffer } from './trust';
 
 export type Tier = 'free' | 'gold';
 export type Sort = 'hot' | 'discount' | 'price' | 'newest';
@@ -13,21 +13,23 @@ export interface ListOptions {
   sort?: Sort;
   limit?: number;
   tier?: Tier;
+  /** Only offers whose source allows AI processing (used by the assistant's tool). */
+  aiOnly?: boolean;
 }
 
 const STOP = new Set(['under', 'for', 'the', 'and', 'with', 'a', 'an', 'deal', 'deals', 'best', 'cheap', 'cheapest', 'find', 'me', 'my', 'this', 'that', 'than', 'less', 'below', 'around']);
 
-const num = (d: Prisma.Decimal | null | undefined) => (d == null ? null : Number(d));
+const PRICE_FIELDS = { id: true, price: true, listPrice: true } as const;
 
 @Injectable()
 export class DealsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Free users don't see Gold-only deals or deals still in their Gold early-access window. */
-  private visibility(tier: Tier): Prisma.DealWhereInput {
+  private visibility(tier: Tier, offerFilter: Prisma.OfferWhereInput): Prisma.DealWhereInput {
     const base: Prisma.DealWhereInput = {
       status: 'ACTIVE',
-      offers: { some: trustedOffer },
+      offers: { some: offerFilter },
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     };
     if (tier === 'gold') return base;
@@ -51,7 +53,8 @@ export class DealsService {
 
   async list(opts: ListOptions = {}) {
     const tier = opts.tier ?? 'free';
-    const and: Prisma.DealWhereInput[] = [this.visibility(tier)];
+    const offerFilter = opts.aiOnly ? aiAllowedOffer() : trustedOffer();
+    const and: Prisma.DealWhereInput[] = [this.visibility(tier, offerFilter)];
     if (opts.category) and.push({ category: { slug: opts.category } });
     let maxPrice = opts.maxPrice;
     if (opts.q) {
@@ -62,10 +65,12 @@ export class DealsService {
           OR: parsed.words.flatMap((w) => [
             { title: { contains: w, mode: 'insensitive' as const } },
             { category: { name: { contains: w, mode: 'insensitive' as const } } },
+            { product: { brand: { contains: w, mode: 'insensitive' as const } } },
           ]),
         });
       }
     }
+    // Rough filter on the stored price; the exact check below uses only the offers shown right now.
     if (maxPrice != null) and.push({ bestPrice: { lte: maxPrice } });
 
     const orderBy: Prisma.DealOrderByWithRelationInput[] =
@@ -74,28 +79,33 @@ export class DealsService {
       : opts.sort === 'discount' ? [{ discountPct: 'desc' }]
       : [{ isHot: 'desc' }, { discountPct: 'desc' }];
 
+    const limit = Math.min(opts.limit ?? 24, 60);
     const deals = await this.prisma.deal.findMany({
       where: { AND: and },
       orderBy,
-      take: Math.min(opts.limit ?? 24, 60),
-      include: { category: true, offers: { where: trustedOffer, select: { id: true } } },
+      take: limit,
+      include: { category: true, offers: { where: offerFilter, select: PRICE_FIELDS } },
     });
-    return deals.map((d) => this.toCard(d));
+    return deals
+      .map((d) => this.toCard(d))
+      .filter((c): c is NonNullable<typeof c> => !!c && (maxPrice == null || c.bestPrice <= maxPrice));
   }
 
   async detail(slug: string, tier: Tier = 'free') {
+    const offerFilter = trustedOffer();
     const deal = await this.prisma.deal.findFirst({
-      where: { AND: [{ slug }, this.visibility(tier)] },
+      where: { AND: [{ slug }, this.visibility(tier, offerFilter)] },
       include: {
         category: true,
-        offers: { where: trustedOffer, include: { merchant: true }, orderBy: { price: 'asc' } },
+        offers: { where: offerFilter, include: { merchant: true, source: { select: { attributionText: true } } }, orderBy: { price: 'asc' } },
         priceHistory: { orderBy: { recordedAt: 'asc' } },
       },
     });
-    if (!deal) throw new NotFoundException('Deal not found or no longer available');
+    const card = deal && this.toCard(deal);
+    if (!deal || !card) throw new NotFoundException('Deal not found or no longer available');
     const cheapest = Math.min(...deal.offers.map((o) => Number(o.price)));
     return {
-      ...this.toCard(deal),
+      ...card,
       description: deal.description,
       offers: deal.offers.map((o) => ({
         id: o.id,
@@ -109,6 +119,7 @@ export class DealsService {
         speedRank: o.speedRank,
         bestPrice: Number(o.price) === cheapest,
         lastCheckedAt: o.lastCheckedAt,
+        attribution: o.source?.attributionText ?? null,
         goUrl: `/api/go/${o.id}`,
       })),
       priceHistory: deal.priceHistory.map((p) => ({ price: Number(p.price), date: p.recordedAt })),
@@ -116,23 +127,22 @@ export class DealsService {
   }
 
   private toCard(d: {
-    id: string; slug: string; title: string; imageUrl: string | null;
-    originalPrice: Prisma.Decimal; bestPrice: Prisma.Decimal; priceUnit: string | null;
-    discountPct: number; isHot: boolean; goldOnly: boolean; goldEarlyUntil: Date | null; expiresAt: Date | null;
+    id: string; slug: string; title: string; imageUrl: string | null; productId: string | null;
+    originalPrice: Prisma.Decimal; priceUnit: string | null;
+    isHot: boolean; goldOnly: boolean; goldEarlyUntil: Date | null; expiresAt: Date | null;
     category: { slug: string; name: string; color: string };
-    offers: { id: string }[];
+    offers: { id: string; price: Prisma.Decimal; listPrice: Prisma.Decimal | null }[];
   }) {
+    const prices = cardPrices(d.offers, { originalPrice: Number(d.originalPrice), isLegacyDemo: !d.productId });
+    if (!prices) return null;
     return {
       id: d.id,
       slug: d.slug,
       title: d.title,
       imageUrl: d.imageUrl,
       category: { slug: d.category.slug, name: d.category.name, color: d.category.color },
-      originalPrice: num(d.originalPrice),
-      bestPrice: num(d.bestPrice),
+      ...prices,
       priceUnit: d.priceUnit,
-      discountPct: d.discountPct,
-      saved: Math.round((Number(d.originalPrice) - Number(d.bestPrice)) * 100) / 100,
       isHot: d.isHot,
       goldOnly: d.goldOnly,
       goldEarlyAccess: !!d.goldEarlyUntil && d.goldEarlyUntil > new Date(),

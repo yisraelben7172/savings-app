@@ -20,34 +20,170 @@ enum DealStatus {
 }
 
 model Category {
-  id        String @id @default(cuid())
-  slug      String @unique
+  id        String    @id @default(cuid())
+  slug      String    @unique
   name      String
   color     String // design token name, e.g. "sky"
-  sortOrder Int    @default(0)
+  sortOrder Int       @default(0)
   deals     Deal[]
+  products  Product[]
 }
 
-// A store. Only approved merchants with trustScore >= 70 are ever shown.
+enum IntegrationType {
+  NONE // listed, no data connection yet
+  FEED // partner-provided CSV/XML file
+  RETAILER_API
+  NETWORK_API // via an affiliate network (Impact, CJ, Awin...)
+  MANUAL
+}
+
+enum AffiliateStatus {
+  NOT_APPLIED
+  APPLIED
+  APPROVED
+  REJECTED
+}
+
+enum HealthStatus {
+  UNKNOWN
+  HEALTHY
+  DEGRADED
+  FAILING
+}
+
+// A store (the retailer registry). Only approved merchants with trustScore >= 70 are ever shown.
 model Merchant {
+  id                  String          @id @default(cuid())
+  slug                String          @unique
+  name                String
+  domain              String          @unique // links must point at this domain
+  network             String // amazon, ebay, impact, cj, expedia, booking, travelpayouts...
+  affiliateTag        String? // e.g. Amazon associate tag (not a secret)
+  trustScore          Int             @default(0)
+  approved            Boolean         @default(false)
+  rating              Float?
+  color               String          @default("sky")
+  active              Boolean         @default(true)
+  integrationType     IntegrationType @default(NONE)
+  affiliateStatus     AffiliateStatus @default(NOT_APPLIED)
+  supportedCategories String[]        @default([])
+  linkCapability      String? // how tracked links are made, e.g. "amazon-tag", "impact-deeplink" (once verified)
+  complianceNotes     String?
+  lastSyncAt          DateTime?
+  health              HealthStatus    @default(UNKNOWN)
+  healthNote          String?
+  offers              Offer[]
+  sources             DataSource[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+enum SourceKind {
+  DEMO // our sample catalog (prisma/seed.ts)
+  CSV_FEED
+  XML_FEED
+  RETAILER_API
+  NETWORK_API
+  MANUAL
+}
+
+enum SourceStatus {
+  AWAITING_APPROVAL // permission not confirmed: never collect data
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+// Where catalog data comes from, and what we're allowed to do with it.
+// Secrets never go here: credentials live in the API's environment.
+model DataSource {
+  id                  String         @id @default(cuid())
+  name                String
+  kind                SourceKind
+  status              SourceStatus   @default(AWAITING_APPROVAL)
+  merchantId          String?
+  merchant            Merchant?      @relation(fields: [merchantId], references: [id])
+  // Permission record (must be filled in before the source can be activated)
+  accessMethod        String? // e.g. "Partner emails a daily CSV", "Impact Catalog API"
+  agreementUrl        String?
+  permissionNotes     String?
+  allowedFields       String[]       @default([])
+  aiUseAllowed        Boolean        @default(false) // may this data be sent to Claude?
+  attributionText     String? // shown next to prices when required
+  priceFreshnessHours Int            @default(24) // older offers are hidden, never shown as live
+  retentionDays       Int? // delete price history older than this (null = keep)
+  fullSnapshot        Boolean        @default(true) // each import is the whole catalog: missing SKUs go out of stock
+  config              Json? // non-secret settings, e.g. CSV column mapping
+  approvedAt          DateTime?
+  approvedBy          String?
+  lastRunAt           DateTime?
+  health              HealthStatus   @default(UNKNOWN)
+  healthNote          String?
+  offers              Offer[]
+  runs                IngestionRun[]
+  priceHistory        PriceHistory[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL // some rows rejected
+  FAILED
+}
+
+model IngestionRun {
+  id         String     @id @default(cuid())
+  sourceId   String
+  source     DataSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  status     RunStatus  @default(RUNNING)
+  trigger    String // "admin-upload", "schedule"...
+  fileHash   String?
+  rowsRead   Int        @default(0)
+  created    Int        @default(0)
+  updated    Int        @default(0)
+  unchanged  Int        @default(0)
+  rejected   Int        @default(0)
+  markedOut  Int        @default(0) // SKUs missing from a full snapshot
+  errors     Json? // first rejected rows: [{ row, code, message }]
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+
+  @@index([sourceId, startedAt])
+}
+
+// The canonical item, independent of who sells it. Matched only by identifiers, never by title.
+model Product {
   id           String   @id @default(cuid())
-  slug         String   @unique
-  name         String
-  domain       String   @unique // links must point at this domain
-  network      String // amazon, ebay, impact, cj, expedia, booking, travelpayouts...
-  affiliateTag String? // e.g. Amazon associate tag
-  trustScore   Int      @default(0)
-  approved     Boolean  @default(false)
-  rating       Float?
-  color        String   @default("sky")
-  offers       Offer[]
+  title        String
+  brand        String?
+  brandKey     String? // lowercase brand for matching
+  manufacturer String?
+  model        String?
+  mpn          String?
+  mpnKey       String? // MPN uppercase, letters and digits only
+  gtin         String?  @unique // normalized to 14 digits, check digit verified
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id])
+  subcategory  String?
+  description  String?
+  attributes   Json? // specs and variant info (size, color...)
+  imageUrl     String? // only where the source permits images
+  deals        Deal[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@unique([brandKey, mpnKey])
+  @@index([categoryId])
 }
 
+// The listing shoppers see for one product: its current best price across stores.
 model Deal {
   id             String         @id @default(cuid())
   slug           String         @unique
+  productId      String?        @unique // null for demo deals made before products existed
+  product        Product?       @relation(fields: [productId], references: [id])
   title          String
   description    String?
   imageUrl       String?
@@ -74,20 +210,29 @@ model Deal {
 
 // One store's price for a deal (the "choose where to buy" rows)
 model Offer {
-  id            String   @id @default(cuid())
+  id            String      @id @default(cuid())
   dealId        String
-  deal          Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  deal          Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
   merchantId    String
-  merchant      Merchant @relation(fields: [merchantId], references: [id])
-  price         Decimal  @db.Decimal(12, 2)
+  merchant      Merchant    @relation(fields: [merchantId], references: [id])
+  price         Decimal     @db.Decimal(12, 2) // what the shopper pays now (sale price if on sale)
+  listPrice     Decimal?    @db.Decimal(12, 2) // the source's "was"/list price, only if the source provides it
+  currency      String      @default("USD")
   url           String // product page at the merchant
   deliveryNote  String?
-  speedRank     Int      @default(5) // 0 = fastest
-  inStock       Boolean  @default(true)
-  lastCheckedAt DateTime @default(now())
+  speedRank     Int         @default(5) // 0 = fastest
+  inStock       Boolean     @default(true)
+  condition     String      @default("new") // new | refurbished | used
+  lastCheckedAt DateTime    @default(now()) // when the source last confirmed this price
+  staleAfter    DateTime? // after this the price is not shown as current (null = no expiry, demo only)
+  sourceId      String?
+  source        DataSource? @relation(fields: [sourceId], references: [id])
+  retailerSku   String? // the retailer's own product ID from the source
   clicks        Click[]
 
   @@unique([dealId, merchantId])
+  @@unique([sourceId, retailerSku])
+  @@index([staleAfter])
 }
 
 model Click {
@@ -103,13 +248,17 @@ model Click {
 }
 
 model PriceHistory {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   dealId     String
-  deal       Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  price      Decimal  @db.Decimal(12, 2)
-  recordedAt DateTime @default(now())
+  deal       Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  price      Decimal     @db.Decimal(12, 2)
+  recordedAt DateTime    @default(now())
+  sourceId   String? // provenance; history is deleted per the source's retention rule
+  source     DataSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  merchantId String?
 
   @@index([dealId, recordedAt])
+  @@index([sourceId, recordedAt])
 }
 
 model User {

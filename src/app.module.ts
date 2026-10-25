@@ -10,6 +10,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ClicksModule } from './clicks/clicks.module';
 import { AssistantModule } from './assistant/assistant.module';
 import { OutreachModule } from './outreach/outreach.module';
+import { CatalogModule } from './catalog/catalog.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { OutreachModule } from './outreach/outreach.module';
     ClicksModule,
     AssistantModule,
     OutreachModule,
+    CatalogModule,
   ],
   controllers: [HealthController],
 })

@@ -3,8 +3,8 @@ import type { Response } from 'express';
 import { ClicksController } from '../src/clicks/clicks.controller';
 import type { PrismaService } from '../src/prisma/prisma.service';
 
-const merchant = (o: Partial<{ approved: boolean; trustScore: number; domain: string; network: string; affiliateTag: string | null }> = {}) => ({
-  approved: true, trustScore: 90, domain: 'bestbuy.com', network: 'impact', affiliateTag: null, ...o,
+const merchant = (o: Partial<{ approved: boolean; active: boolean; trustScore: number; domain: string; network: string; affiliateTag: string | null }> = {}) => ({
+  approved: true, active: true, trustScore: 90, domain: 'bestbuy.com', network: 'impact', affiliateTag: null, ...o,
 });
 
 function setup(offer: unknown) {
@@ -27,6 +27,7 @@ describe('Go to store redirect', () => {
   it.each([
     ['unknown offer', null],
     ['unapproved merchant', { url: 'https://www.bestbuy.com/p/1', merchant: merchant({ approved: false }) }],
+    ['inactive merchant', { url: 'https://www.bestbuy.com/p/1', merchant: merchant({ active: false }) }],
     ['low trust score', { url: 'https://www.bestbuy.com/p/1', merchant: merchant({ trustScore: 69 }) }],
     ['URL off the merchant domain', { url: 'https://evil.example/p/1', merchant: merchant() }],
     ['plain http URL', { url: 'http://www.bestbuy.com/p/1', merchant: merchant() }],

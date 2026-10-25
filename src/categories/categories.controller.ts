@@ -10,7 +10,7 @@ export class CategoriesController {
   async list() {
     const cats = await this.prisma.category.findMany({
       orderBy: { sortOrder: 'asc' },
-      include: { _count: { select: { deals: { where: { status: 'ACTIVE', offers: { some: trustedOffer } } } } } },
+      include: { _count: { select: { deals: { where: { status: 'ACTIVE', offers: { some: trustedOffer() } } } } } },
     });
     return cats.map((c) => ({ slug: c.slug, name: c.name, color: c.color, dealCount: c._count.deals }));
   }

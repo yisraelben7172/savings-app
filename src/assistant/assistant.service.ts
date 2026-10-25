@@ -82,7 +82,8 @@ export class AssistantService {
       const results: Block[] = [];
       for (const b of data.content.filter((x) => x.type === 'tool_use')) {
         const input = (b.input ?? {}) as { query?: string; category?: string; max_price?: number };
-        const found = await this.deals.list({ q: input.query, category: input.category, maxPrice: input.max_price, limit: 5 });
+        // Only data whose source agreement allows AI processing is ever sent to Claude.
+        const found = await this.deals.list({ q: input.query, category: input.category, maxPrice: input.max_price, limit: 5, aiOnly: true });
         found.forEach((d) => shown.set(d.id, d));
         results.push({
           type: 'tool_result',

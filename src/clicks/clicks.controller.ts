@@ -14,7 +14,8 @@ export class ClicksController {
   async go(@Param('offerId') offerId: string, @Query('src') src: string | undefined, @Res() res: Response) {
     const offer = await this.prisma.offer.findUnique({ where: { id: offerId }, include: { merchant: true } });
     const m = offer?.merchant;
-    if (!offer || !m || !m.approved || m.trustScore < MIN_TRUST_SCORE || !isLinkOnMerchantDomain(offer.url, m.domain)) {
+    // A stale price may still link through (the store shows its live price), but never to an inactive or untrusted store.
+    if (!offer || !m || !m.approved || !m.active || m.trustScore < MIN_TRUST_SCORE || !isLinkOnMerchantDomain(offer.url, m.domain)) {
       throw new NotFoundException('This store link is not available');
     }
     await this.prisma.click.create({ data: { offerId, source: src?.slice(0, 20) } });

@@ -17,6 +17,7 @@
     "prisma:seed": "prisma db seed",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "jest",
+    "test:int": "jest --config jest.int.config.js",
     "gmail:connect": "node --env-file=.env scripts/gmail-connect.mjs"
   },
   "prisma": {
