@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { aiAllowedOffer, cardPrices, trustedOffer } from './trust';
+import { dealVisibility, type Tier } from './visibility';
 
-export type Tier = 'free' | 'gold';
+export type { Tier } from './visibility';
 export type Sort = 'hot' | 'discount' | 'price' | 'newest';
 
 export interface ListOptions {
@@ -25,17 +26,8 @@ const PRICE_FIELDS = { id: true, price: true, listPrice: true } as const;
 export class DealsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Free users don't see Gold-only deals or deals still in their Gold early-access window. */
   private visibility(tier: Tier, offerFilter: Prisma.OfferWhereInput): Prisma.DealWhereInput {
-    const base: Prisma.DealWhereInput = {
-      status: 'ACTIVE',
-      offers: { some: offerFilter },
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-    };
-    if (tier === 'gold') return base;
-    return {
-      AND: [base, { goldOnly: false }, { OR: [{ goldEarlyUntil: null }, { goldEarlyUntil: { lte: new Date() } }] }],
-    };
+    return dealVisibility(tier, offerFilter);
   }
 
   /** Turns "running shoes under $80" into words + a max price. */
@@ -135,7 +127,8 @@ export class DealsService {
     };
   }
 
-  private toCard(d: {
+  /** The shopper-facing card for a deal and the offers currently shown for it (null if none are). */
+  toCard(d: {
     id: string; slug: string; title: string; imageUrl: string | null; productId: string | null;
     originalPrice: Prisma.Decimal; priceUnit: string | null;
     isHot: boolean; goldOnly: boolean; goldEarlyUntil: Date | null; expiresAt: Date | null;

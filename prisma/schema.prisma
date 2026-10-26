@@ -421,6 +421,28 @@ model ChatMessage {
   createdAt DateTime    @default(now())
 }
 
+// One AI assistant run. Counts, cost and timing only: never the shopper's message or the model's answer.
+model AiUsage {
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  kind             String // assistant
+  model            String
+  outcome          String // ok | fallback_nokey | fallback_budget | fallback_error | blocked_claim | refusal | limit
+  turns            Int      @default(0)
+  toolCalls        Int      @default(0)
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costUsd          Decimal  @default(0) @db.Decimal(10, 6)
+  priceKnown       Boolean  @default(true) // false: model not in our price table, costed at the highest tier
+  latencyMs        Int      @default(0)
+  error            String? // short error class, never message content
+
+  @@index([createdAt])
+  @@index([outcome, createdAt])
+}
+
 // ---------- Partner outreach (admin only) ----------
 
 enum PartnerStatus {

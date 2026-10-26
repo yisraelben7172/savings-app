@@ -12,6 +12,7 @@ import { AssistantModule } from './assistant/assistant.module';
 import { OutreachModule } from './outreach/outreach.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { AffiliateModule } from './affiliate/affiliate.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AffiliateModule } from './affiliate/affiliate.module';
     OutreachModule,
     CatalogModule,
     AffiliateModule,
+    SearchModule,
   ],
   controllers: [HealthController],
 })
