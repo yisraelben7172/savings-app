@@ -10,10 +10,16 @@ export type DealRef = { title: string; brand: string | null; tokens: string[]; s
 export type FactSet = { amounts: number[]; percents: number[]; stores: Set<string>; deals: DealRef[] };
 
 const money = /\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g;
+const amount = String.raw`(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`;
+const dollarWords = new RegExp(`${amount}\\s?(?:dollars?|bucks|usd)\\b`, 'gi'); // "20 dollars"
+const budgetPhrase = new RegExp(String.raw`\b(?:under|below|less than|over|above|more than|at most|at least|max(?:imum)?|budget(?: of| is)?|up to|around|about)\s+\$?` + amount, 'gi'); // "under 20"
 const percent = /(\d{1,3}(?:\.\d+)?)\s?%/g;
 const near = (a: number, b: number) => Math.abs(a - b) < 0.011;
 
-export const amountsIn = (text: string) => [...text.matchAll(money)].map((m) => Number(m[1].replace(/,/g, '')));
+const toNumber = (m: RegExpMatchArray) => Number(m[1].replace(/,/g, ''));
+export const amountsIn = (text: string) => [...[...text.matchAll(money)].map(toNumber), ...[...text.matchAll(dollarWords)].map(toNumber)];
+/** Amounts the shopper gave as a limit in words ("under 20", "budget 300"), which the reply may repeat back. */
+export const budgetAmountsIn = (text: string) => [...text.matchAll(budgetPhrase)].map(toNumber);
 export const percentsIn = (text: string) => [...text.matchAll(percent)].map((m) => Number(m[1]));
 
 export function emptyFacts(): FactSet {
@@ -52,7 +58,7 @@ export function addComparison(f: FactSet, c: Comparison) {
 
 export function checkReply(reply: string, facts: FactSet, knownStores: string[], userText: string): { ok: boolean; problems: string[] } {
   const problems: string[] = [];
-  const userAmounts = amountsIn(userText);
+  const userAmounts = [...amountsIn(userText), ...budgetAmountsIn(userText)];
   const userPercents = percentsIn(userText);
 
   for (const a of amountsIn(reply)) {

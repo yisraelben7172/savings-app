@@ -18,6 +18,16 @@ describe('claim checker', () => {
   it('extracts amounts and percentages', () => {
     expect(amountsIn('It costs $1,299.50 or $58 or $ 7')).toEqual([1299.5, 58, 7]);
     expect(percentsIn('48% off, maybe 12.5 %')).toEqual([48, 12.5]);
+    expect(amountsIn('about 20 dollars or 15 bucks')).toEqual([20, 15]);
+  });
+
+  it('lets the reply repeat a limit the shopper gave in words, but not invent one', () => {
+    const f = facts(deal());
+    const reply = 'Nothing is under $20 right now, but shoes are $58 at Zappos.';
+    expect(checkReply(reply, f, STORES, 'best shoes under 20 dollars').ok).toBe(true);
+    expect(checkReply(reply, f, STORES, 'best shoes under 20').ok).toBe(true);
+    expect(checkReply('They cost $20 at Zappos.', f, STORES, 'shoes please').ok).toBe(false);
+    expect(checkReply('They cost 25 dollars at Zappos.', f, STORES, 'shoes please').ok).toBe(false); // spelled-out amounts are checked too
   });
 
   it('accepts a reply that only uses verified prices, savings, gaps and percentages', () => {
