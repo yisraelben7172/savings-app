@@ -41,5 +41,5 @@ run('assistant with the real model (synthetic catalog)', () => {
 
     expect(hidden).toBe(0);
     expect(outcomes.blocked_claim ?? 0).toBeLessThanOrEqual(Math.ceil(asks.length * 0.1)); // invented claims should be rare, and are always blocked
-  });
+  }, 300_000); // each question is a real model call (a few seconds)
 });
