@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { buildComparison, type CompareItem } from './compare';
 import type { Candidate, Ranked } from './ranking';
 import { rankCandidates } from './ranking';
-import { queryWords, type ShoppingRequest } from './shopping-request';
+import { queryTerms, type ShoppingRequest } from './shopping-request';
 
 const CANDIDATE_LIMIT = 300;
 const MAX_COMPARE = 5;
@@ -38,8 +38,8 @@ export class SearchService {
     const and: Prisma.DealWhereInput[] = [dealVisibility(opts.tier ?? 'free', offerFilter, now)];
     if (req.category) and.push({ category: { slug: req.category } });
 
-    const words = queryWords(req.query);
-    const terms = [...words, ...req.brands];
+    // Retrieval is deliberately broad (any word or synonym, anywhere in the text); ranking.ts then applies the exact rules.
+    const terms = [...queryTerms(req.query).flatMap((t) => [t.word, ...t.alts]), ...req.brands];
     if (terms.length) {
       and.push({
         OR: terms.flatMap((w) => [

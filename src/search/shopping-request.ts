@@ -100,17 +100,62 @@ export function parseShoppingRequest(raw: unknown): ParseResult {
   return errors.length ? { ok: false, errors } : { ok: true, value };
 }
 
-const STOP = new Set(['under', 'for', 'the', 'and', 'with', 'a', 'an', 'deal', 'deals', 'best', 'cheap', 'cheapest', 'find', 'me', 'my', 'this', 'that', 'than', 'less', 'below', 'around', 'some', 'good', 'want', 'need', 'looking', 'please', 'any']);
+const STOP = new Set([
+  'under', 'over', 'above', 'below', 'for', 'the', 'and', 'with', 'without', 'a', 'an', 'deal', 'deals', 'best', 'cheap', 'cheapest', 'find', 'me', 'my', 'this', 'that', 'than',
+  'less', 'more', 'around', 'some', 'good', 'great', 'want', 'need', 'looking', 'please', 'any', 'new', 'latest', 'top', 'buy', 'get', 'weekend', 'today', 'tonight', 'tomorrow', 'from', 'near', 'one',
+]);
+const SHORT_WORDS = new Set(['tv', 'pc', 'vr']); // two-letter words that mean something
+const SYNONYMS: Record<string, string[]> = {
+  ticket: ['seat', 'show', 'event'],
+  tv: ['televis'],
+  televis: ['tv'],
+  laptop: ['notebook'],
+  sofa: ['couch'],
+  couch: ['sofa'],
+  sneaker: ['shoe'],
+  earphone: ['earbud', 'headphon'],
+};
 
-/** Words that carry meaning in a query ("running shoes under $80" -> running, shoe). Light stemming: plural "s". */
-export function queryWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/\$?\d+(\.\d+)?/g, ' ')
-    .split(/[^a-z']+/)
-    .map((w) => w.replace(/s$/, ''))
-    .filter((w) => w.length > 2 && !STOP.has(w));
+/** Cuts a common ending so "moisturizer" finds "moisturizing" and "shoes" finds "shoe". Always leaves 4+ letters. */
+export function stem(w: string): string {
+  for (const suf of ['ing', 'ers', 'er', 'ed', 'es', 's']) if (w.length - suf.length >= 4 && w.endsWith(suf)) return w.slice(0, -suf.length);
+  return w;
 }
+
+export type QueryTerm = { word: string; alts: string[] };
+
+/**
+ * The meaningful parts of a query as stems, each with any synonyms. Budget phrases ("under $80") are removed, but
+ * numbers that belong to a spec ("4K", "16GB", "iPhone 15") are kept as part of their word.
+ */
+export function queryTerms(text: string): QueryTerm[] {
+  const noBudget = text
+    .toLowerCase()
+    .replace(/(?:under|below|less than|max|over|above|at least|more than|<|>)\s*\$?\s*\d+(?:[.,]\d+)?/g, ' ')
+    .replace(/\$\s*\d+(?:[.,]\d+)?/g, ' ')
+    .replace(/'s\b/g, '');
+  const seen = new Set<string>();
+  const out: QueryTerm[] = [];
+  for (const raw of noBudget.split(/[^a-z0-9]+/)) {
+    if (!raw || STOP.has(raw) || /^\d+$/.test(raw)) continue;
+    const mixed = /[a-z]/.test(raw) && /\d/.test(raw);
+    if (raw.length < 3 && !mixed && !SHORT_WORDS.has(raw)) continue;
+    const word = mixed ? raw : stem(raw);
+    if (seen.has(word)) continue;
+    seen.add(word);
+    out.push({ word, alts: SYNONYMS[word] ?? [] });
+  }
+  return out;
+}
+
+/** The stems only (kept for callers that don't need synonyms). */
+export const queryWords = (text: string): string[] => queryTerms(text).map((t) => t.word);
+
+/**
+ * How many of a query's terms a listing must contain to count as relevant. One word: that word. Two: both ("air fryer"
+ * must not match an office chair). Longer queries may miss about a third. This favors showing nothing over showing the wrong thing.
+ */
+export const requiredMatches = (terms: number): number => (terms <= 2 ? terms : Math.ceil((terms * 2) / 3));
 
 /** Plain-language fallback (no AI): pulls a budget out of the text and keeps the rest as the query. */
 export function requestFromText(text: string, limit = 3): ShoppingRequest {

@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import { addComparison, addDeal, type FactSet } from '../ai/claim-check';
+import { addComparison, addDeal, emptyFacts, type FactSet } from '../ai/claim-check';
 import type { SearchService } from '../search/search.service';
 import { dealFacts, type DealFacts } from '../search/facts';
 import { CATEGORY_SLUGS, SORTS, parseShoppingRequest } from '../search/shopping-request';
@@ -47,7 +47,7 @@ export type ToolOutcome = { content: string; isError: boolean };
 /** What one assistant run has seen so far: the cards to show and the facts a reply may quote. */
 export class RunState {
   readonly shown = new Map<string, Card>();
-  readonly facts: FactSet = { amounts: [], percents: [], stores: new Set() };
+  readonly facts: FactSet = emptyFacts();
   readonly dealFacts: DealFacts[] = [];
   compareSlugs: string[] | null = null;
 }

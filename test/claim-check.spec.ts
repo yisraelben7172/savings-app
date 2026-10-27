@@ -34,6 +34,17 @@ describe('claim checker', () => {
     expect(checkReply('Walmart also stocks them.', f, STORES, 'I like Walmart').ok).toBe(true); // the shopper named it
   });
 
+  it('rejects pairing a product with a store that does not list it, even if that store appears elsewhere in the results', () => {
+    const bose = deal({ slug: 'bose', title: 'Bose QuietComfort Ultra headphones', brand: 'Bose', bestPrice: 379, storeStatedListPrice: null, statedDiscountPercent: null, stores: [{ store: 'Target', price: 379, delivery: null, priceCheckedHoursAgo: 1 }] });
+    const f = facts(deal(), bose); // Zappos + Amazon sell the Brooks; Target sells the Bose
+    expect(checkReply('The Brooks Ghost shoes are $58 at Target.', f, STORES, '').problems[0]).toMatch(/Target doesn't list Road running shoes/);
+    expect(checkReply('The Bose headphones are $379 at Target, and the Brooks are $58 at Zappos.', f, STORES, '').ok).toBe(true);
+    expect(checkReply('Target has the Bose headphones for $379.', f, STORES, '').ok).toBe(true);
+    expect(checkReply('The Bose headphones are $379 at Zappos.', f, STORES, '').ok).toBe(false);
+    // no product named in the sentence: only the set-level check applies
+    expect(checkReply('It is $58 at Zappos. Target has the other one.', f, STORES, '').ok).toBe(true);
+  });
+
   it("allows echoing the shopper's own numbers", () => {
     expect(checkReply('Everything here is under your $80 budget.', facts(deal()), STORES, 'running shoes under $80').ok).toBe(true);
   });

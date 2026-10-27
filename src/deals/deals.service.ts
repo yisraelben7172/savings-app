@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { queryWords } from '../search/shopping-request';
 import { aiAllowedOffer, cardPrices, trustedOffer } from './trust';
 import { dealVisibility, type Tier } from './visibility';
 
@@ -18,8 +19,6 @@ export interface ListOptions {
   aiOnly?: boolean;
 }
 
-const STOP = new Set(['under', 'for', 'the', 'and', 'with', 'a', 'an', 'deal', 'deals', 'best', 'cheap', 'cheapest', 'find', 'me', 'my', 'this', 'that', 'than', 'less', 'below', 'around']);
-
 const PRICE_FIELDS = { id: true, price: true, listPrice: true } as const;
 
 @Injectable()
@@ -34,13 +33,8 @@ export class DealsService {
   parseQuery(text: string): { words: string[]; maxPrice?: number } {
     const m = text.match(/(?:under|below|less than|max|<)\s*\$?\s*(\d+(?:\.\d+)?)/i);
     const maxPrice = m ? Number(m[1]) : undefined;
-    const words = text
-      .toLowerCase()
-      .replace(/\$?\d+(\.\d+)?/g, ' ')
-      .split(/[^a-z']+/)
-      .map((w) => w.replace(/s$/, ''))
-      .filter((w) => w.length > 2 && !STOP.has(w));
-    return { words, maxPrice };
+    // Same understanding of a query as the ranked search (stems, spec numbers like "4K" and "16GB" kept).
+    return { words: queryWords(text), maxPrice };
   }
 
   async list(opts: ListOptions = {}) {

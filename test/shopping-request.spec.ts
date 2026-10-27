@@ -1,4 +1,4 @@
-import { parseShoppingRequest, queryWords, requestFromText } from '../src/search/shopping-request';
+import { parseShoppingRequest, queryTerms, queryWords, requestFromText, requiredMatches, stem } from '../src/search/shopping-request';
 
 const ok = (raw: unknown) => {
   const r = parseShoppingRequest(raw);
@@ -63,8 +63,30 @@ describe('plain-language fallback', () => {
     expect(requestFromText('lamp less than 45.50').maxPrice).toBe(45.5);
   });
 
-  it('keeps only meaningful query words', () => {
-    expect(queryWords('Find me the best running shoes under $80, please')).toEqual(['running', 'shoe']);
+  it('keeps only meaningful query words, as stems', () => {
+    expect(queryWords('Find me the best running shoes under $80, please')).toEqual(['runn', 'shoe']);
     expect(queryWords('a to z')).toEqual([]);
+    expect(queryWords("men's moisturizing cream")).toEqual(['men', 'moisturiz', 'cream']);
+  });
+
+  it('keeps the numbers that belong to a spec and drops budgets', () => {
+    expect(queryWords('4K monitor')).toEqual(['4k', 'monitor']);
+    expect(queryWords('laptop 16GB under $600')).toEqual(['laptop', '16gb']);
+    expect(queryWords('iPhone 15 case less than 25')).toEqual(['iphone', 'case']);
+    expect(queryWords('55 inch TV over $300')).toEqual(['inch', 'tv']);
+    expect(queryWords('gifts under 50')).toEqual(['gift']);
+  });
+
+  it('stems conservatively and expands a few synonyms', () => {
+    expect(stem('moisturizer')).toBe('moisturiz');
+    expect(stem('shoes')).toBe('shoe');
+    expect(stem('headphones')).toBe('headphon');
+    expect(stem('fryer')).toBe('fryer'); // would leave fewer than 4 letters
+    expect(stem('air')).toBe('air');
+    expect(queryTerms('concert tickets')[1]).toEqual({ word: 'ticket', alts: ['seat', 'show', 'event'] });
+  });
+
+  it('requires enough of the query to match: both words of a short query', () => {
+    expect([0, 1, 2, 3, 4, 5, 6].map(requiredMatches)).toEqual([0, 1, 2, 2, 3, 4, 4]);
   });
 });

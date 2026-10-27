@@ -1,4 +1,4 @@
-import { queryWords, type ShoppingRequest } from './shopping-request';
+import { queryTerms, requiredMatches, type QueryTerm, type ShoppingRequest } from './shopping-request';
 
 /**
  * Transparent ranking. The input type below deliberately has no affiliate program, commission, click or revenue
@@ -79,22 +79,25 @@ export function passesHardConstraints(c: Candidate, req: ShoppingRequest): boole
     if (!ok) return false;
   }
 
-  const words = queryWords(req.query);
-  if (words.length) {
+  const terms = queryTerms(req.query);
+  if (terms.length) {
     const all = text.all(c);
-    if (!words.some((w) => all.includes(w))) return false;
+    if (terms.filter((t) => termIn(all, t)).length < requiredMatches(terms.length)) return false;
   }
   return true;
 }
 
+/** A term matches when it (or a synonym) starts a word in the text: "air" matches "AirPods" but never "chair". */
+const termIn = (haystack: string, t: QueryTerm) => [t.word, ...t.alts].some((w) => hasWord(haystack, w));
+
 function relevance(c: Candidate, req: ShoppingRequest): number {
-  const words = queryWords(req.query);
-  if (!words.length) return 1;
+  const terms = queryTerms(req.query);
+  if (!terms.length) return 1;
   const title = c.title.toLowerCase();
   const brandCat = `${c.brand ?? ''} ${c.categoryName}`.toLowerCase();
   const desc = `${c.description ?? ''} ${c.attributesText}`.toLowerCase();
-  const sum = words.reduce((s, w) => s + (title.includes(w) ? 1 : brandCat.includes(w) ? 0.6 : desc.includes(w) ? 0.3 : 0), 0);
-  return clamp01(sum / words.length);
+  const sum = terms.reduce((s, t) => s + (termIn(title, t) ? 1 : termIn(brandCat, t) ? 0.6 : termIn(desc, t) ? 0.3 : 0), 0);
+  return clamp01(sum / terms.length);
 }
 
 function hoursAgo(d: Date, now: Date) {
@@ -116,7 +119,7 @@ export function rankCandidates(all: Candidate[], req: ShoppingRequest, now: Date
     const bestPrice = cheapest.price;
     const discountPct = statedDiscount(c);
     const factText = text.facts(c);
-    const verified = facts.filter((f) => f.split(' ').every((w) => factText.includes(w)));
+    const verified = facts.filter((f) => f.split(' ').every((w) => hasWord(factText, w)));
     const unverified = facts.filter((f) => !verified.includes(f));
 
     const window = cheapest.staleAfter ? cheapest.staleAfter.getTime() - cheapest.lastCheckedAt.getTime() : 0;
@@ -132,8 +135,8 @@ export function rankCandidates(all: Candidate[], req: ShoppingRequest, now: Date
     const score = round((Object.keys(WEIGHTS) as (keyof Components)[]).reduce((s, k) => s + WEIGHTS[k] * comps[k], 0));
 
     const why: string[] = [];
-    const words = queryWords(req.query);
-    if (words.length && comps.relevance > 0) why.push(`Matches "${req.query}"${c.title.toLowerCase().includes(words[0]) ? ' in the title' : ''}.`);
+    const terms = queryTerms(req.query);
+    if (terms.length && comps.relevance > 0) why.push(`Matches "${req.query}"${terms.every((t) => termIn(c.title.toLowerCase(), t)) ? ' in the title' : ''}.`);
     if (req.maxPrice !== undefined) why.push(`${usd(bestPrice)} is within your ${usd(req.maxPrice)} budget.`);
     if (verified.length) why.push(`The listing mentions: ${verified.join(', ')}.`);
     if (discountPct !== null) why.push(`${usd(bestPrice)} is ${discountPct}% below the store's own list price of ${usd(cheapest.listPrice!)}.`);
