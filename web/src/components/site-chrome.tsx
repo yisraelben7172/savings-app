@@ -63,6 +63,15 @@ export function Footer() {
             </ul>
           </div>
           <div>
+            <h3>Company</h3>
+            <ul>
+              <li><Link href="/about">About</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
+              <li><Link href="/affiliate-disclosure">Affiliate disclosure</Link></li>
+              <li><Link href="/privacy">Privacy policy</Link></li>
+            </ul>
+          </div>
+          <div>
             <h3>Account</h3>
             <ul>
               <li><Link href="/signin">Sign in</Link></li>

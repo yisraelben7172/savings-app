@@ -368,6 +368,20 @@ h2, .h2 { font: 700 30px/1.15 var(--display); letter-spacing: -.025em; }
 .save-btn[aria-pressed="true"] { color: var(--rose-d); border-color: var(--rose-d); }
 @media (max-width: 960px) { .deal-page { grid-template-columns: 1fr; gap: 24px; } }
 
+/* long-form pages (privacy, disclosure, about, contact) */
+.prose { max-width: 720px; margin: 0 auto; padding-bottom: 24px; }
+.prose h1 { font: 800 clamp(32px, 4.2vw, 46px)/1.08 var(--display); letter-spacing: -.035em; margin-top: 40px; }
+.prose .updated { color: var(--muted); font-size: 14px; margin-top: 10px; }
+.prose h2 { font: 700 22px/1.25 var(--display); letter-spacing: -.02em; margin: 40px 0 10px; }
+.prose p, .prose li { color: var(--ink-2); font-size: 17px; line-height: 1.65; }
+.prose p { margin-top: 12px; }
+.prose ul { margin: 12px 0 0; padding-left: 22px; display: grid; gap: 8px; }
+.prose a { color: var(--link); text-decoration: underline; text-underline-offset: 3px; }
+.prose .lead { font-size: 19px; color: var(--ink); }
+.prose .callout { margin-top: 24px; border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 16px 20px; }
+.prose .callout p { margin-top: 0; }
+.prose .callout p + p { margin-top: 10px; }
+
 /* compare page */
 .cmp { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 15px; }
 .cmp th, .cmp td { padding: 14px 16px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }

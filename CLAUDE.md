@@ -102,3 +102,8 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 5. Later: network report APIs, consent banner + session IDs, scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y
+
+## Legal pages and affiliate application kit (2026-10-27)
+- Site pages /privacy, /affiliate-disclosure, /about, /contact (web/src/app/(site)/), linked in the footer. Text matches what the app really does (no analytics cookies, clicks without IP/UA kept 24 months, assistant text sent to the AI provider and not stored, saved deals in the browser). If behavior changes (accounts, analytics, alerts), update the privacy page and `LEGAL_UPDATED` in web/src/lib/site.ts.
+- Contact details come from Vercel env vars NEXT_PUBLIC_BUSINESS_NAME, NEXT_PUBLIC_CONTACT_EMAIL, NEXT_PUBLIC_BUSINESS_ADDRESS; until set, pages say details are being set up. Never invent them.
+- docs/affiliate-application-kit.md: checklist, answer bank, per-network notes, an example application, status tracker. Nothing submitted; owner submits applications. Items marked "verify" need checking on the official page.
