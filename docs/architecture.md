@@ -75,6 +75,28 @@ Gaps against the brief (see the roadmap): no audit log, no agent runs, no import
 
 Decisions: the search is Postgres + code (no separate engine, no embeddings yet); the AI never sees links, store descriptions or anything about affiliate programs; a reply that states anything not in the tool results is replaced, not repaired.
 
+## Shopping plans (`src/plans`)
+
+A plan is a multi-item shopping list with a total budget and optional category budgets. It reuses the same search and ranking as the assistant, so it is commission-blind by construction (the planner types contain no affiliate, click or commission data, and a test greps the source to keep it that way).
+
+```
+POST /api/plans  ──► parsePlanInput (≤ 8 items, qty 1-10, bounded)  ──► ShoppingPlan row (RUNNING, random 32-hex id, expires in 7 days)
+                                  background run: one search per item (checks cancel + 20 s limit before each)  ──► PlanStep rows
+                                  buildPlan (pure): best fit per item; only while over budget, swap to a cheaper option from that
+                                  item's own results (least fit lost per dollar saved); honest "could not get under budget"
+GET  /api/plans/:id              poll until READY / FAILED
+POST /api/plans/:id/select       shopper picks another listed option {index, slug, version}; totals recomputed; version bumps
+POST /api/plans/:id/approve      {version}: every chosen price is re-checked first. Changed or sold out ⇒ plan updated, NOT approved
+                                  (409 with the changes), shopper reviews again. Unchanged ⇒ APPROVED.
+POST /api/plans/:id/cancel       stops a running plan or withdraws a ready one (not an approved one)
+```
+
+- Statuses: RUNNING → READY → APPROVED, or CANCELLED / FAILED (`timeout`, `error`, `interrupted`). A minute-by-minute sweeper fails runs stuck RUNNING; a nightly job deletes expired plans.
+- Items priced per night/day are shown but not added to the total (the final cost depends on quantity). Totals are computed in integer cents.
+- Approval does not buy anything. Vault never sells; shoppers open each deal's store picker and go to the store.
+- No model call is involved today. An AI-written plan (the assistant proposing the item list) is a later step; it would have to go through `parsePlanInput` like any other input.
+- No accounts yet: a plan is reachable only by its random link and holds no personal data (see the privacy page).
+
 ## Affiliate links (`src/affiliate`, `src/clicks`)
 
 ```

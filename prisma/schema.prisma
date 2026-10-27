@@ -443,6 +443,41 @@ model AiUsage {
   @@index([outcome, createdAt])
 }
 
+// ---------- Shopping plans (Priority 5) ----------
+// A plan is a multi-item shopping list with budgets. It is found by its random id (no accounts yet), holds no personal
+// data, and expires. Statuses: RUNNING | READY | APPROVED | CANCELLED | FAILED.
+model ShoppingPlan {
+  id         String    @id // 32 random hex characters, not guessable
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  status     String
+  version    Int       @default(1) // bumps whenever the picks or prices change; approval must name the version the shopper saw
+  input      Json
+  result     Json?
+  error      String? // short error class, never message content
+  finishedAt DateTime?
+  approvedAt DateTime?
+  expiresAt  DateTime
+  steps      PlanStep[]
+
+  @@index([status, createdAt])
+  @@index([expiresAt])
+}
+
+model PlanStep {
+  id         String       @id @default(cuid())
+  planId     String
+  plan       ShoppingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  position   Int
+  kind       String // search | fit_budget | recheck
+  outcome    String // ok | no_match | error | skipped
+  summary    String
+  durationMs Int          @default(0)
+  createdAt  DateTime     @default(now())
+
+  @@index([planId, position])
+}
+
 // ---------- Partner outreach (admin only) ----------
 
 enum PartnerStatus {

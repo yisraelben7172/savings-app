@@ -98,7 +98,7 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 1. Owner: finish the Render Blueprint, send the vault-api address; in Vercel set NEXT_PUBLIC_API_URL, ADMIN_API_KEY (same as Render), ADMIN_PASSWORD, then redeploy. Add ADMIN_API_KEY, WEB_URL (and later Gmail/Telegram values) in Render.
 2. Owner: get a first real feed (a brand's product CSV, or a network catalog once approved) and onboard it via Admin → Stores and Data sources. Apply to affiliate networks; once approved, set up the program in Admin → Affiliate links (see docs/affiliate-integrations.md).
 3. Owner: confirm Amazon's required Associate wording and link-presentation rules before enabling the Amazon program.
-4. Roadmap Priority 5: controlled shopping agents (multi-step runs, multi-item plans with category budgets, persisted run status, user approval). Then 6 remainder (prospect research fields, statuses) and 7 (analytics, price alerts, accounts).
+4. Roadmap Priority 6 remainder (prospect research fields, statuses, draft types, audit history), then 7 (analytics, price alerts, accounts). AI-written plans can come after a valid Claude key.
 5. Later: network report APIs, consent banner + session IDs, scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y
@@ -107,3 +107,9 @@ Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y
 - Site pages /privacy, /affiliate-disclosure, /about, /contact (web/src/app/(site)/), linked in the footer. Text matches what the app really does (no analytics cookies, clicks without IP/UA kept 24 months, assistant text sent to the AI provider and not stored, saved deals in the browser). If behavior changes (accounts, analytics, alerts), update the privacy page and `LEGAL_UPDATED` in web/src/lib/site.ts.
 - Contact details come from Vercel env vars NEXT_PUBLIC_BUSINESS_NAME, NEXT_PUBLIC_CONTACT_EMAIL, NEXT_PUBLIC_BUSINESS_ADDRESS; until set, pages say details are being set up. Never invent them.
 - docs/affiliate-application-kit.md: checklist, answer bank, per-network notes, an example application, status tracker. Nothing submitted; owner submits applications. Items marked "verify" need checking on the official page.
+
+## Shopping plans (Priority 5, built 2026-10-27)
+- src/plans: ShoppingPlan + PlanStep (migration 20261027120000_shopping_plans, rollback in prisma/rollbacks/). API: POST /api/plans, GET /api/plans/:id, POST .../select, .../approve, .../cancel. Site page /plan (web/src/components/plan-builder.tsx). Details in docs/architecture.md.
+- Rules: plan reachable only by its random id (no accounts), expires after 7 days, holds no personal data; ≤ 8 items; 20 s run limit; cancellation and interrupted-run sweeper; approval re-checks every price and refuses (updates the plan) if anything changed. Planner uses the same ranking as search and must never see affiliate/commission data (a test checks the source). Per-night/day prices are shown but not added to totals. Approval does not buy anything.
+- Not built yet: AI-written plans, price alerts on plans, accounts. The model is not involved in plans today.
+- Tests now: 170 unit + 37 database integration (1 live test skipped) (run `npm test` and `npm run test:int` before every push).

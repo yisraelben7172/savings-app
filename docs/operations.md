@@ -77,3 +77,11 @@ Jobs are idempotent: an email is marked SENT only after Gmail accepts it; inboun
 - **Someone asks to stop**: they're added to the do-not-email list automatically (reply "unsubscribe" or the link). To add manually, set the partner to "Opted out".
 - **"Port 3000 in use" locally**: run `start-api.bat`; it stops the old copy.
 - **Admin sign-in fails online**: check `ADMIN_PASSWORD` and `ADMIN_API_KEY` in Vercel, and that `ADMIN_API_KEY` matches Render.
+
+## Shopping plans (jobs and limits)
+| Job | Schedule | What it does |
+|---|---|---|
+| Plan sweeper | every minute | Marks plans stuck in RUNNING for more than 40 s as FAILED (`interrupted`), for example after a restart. |
+| Plan purge | daily 3:45 Eastern | Deletes plans past their 7-day expiry (steps are deleted with them). |
+
+Creating a plan is limited to 6 a minute and 40 a day per visitor (`PLAN_LIMITS` in `src/rate-limits.ts`). A run stops after 20 seconds. Rollback SQL: `prisma/rollbacks/20261027120000_shopping_plans.down.sql` (deletes all plans; needs the owner's go-ahead).

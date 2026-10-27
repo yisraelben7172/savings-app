@@ -13,6 +13,7 @@ import { OutreachModule } from './outreach/outreach.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { AffiliateModule } from './affiliate/affiliate.module';
 import { SearchModule } from './search/search.module';
+import { PlansModule } from './plans/plans.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SearchModule } from './search/search.module';
     CatalogModule,
     AffiliateModule,
     SearchModule,
+    PlansModule,
   ],
   controllers: [HealthController],
 })

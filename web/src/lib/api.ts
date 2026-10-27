@@ -132,3 +132,45 @@ export function goHref(offer: Pick<Offer, "goUrl">, placement?: string) {
 export function money(v: number) {
   return `$${Number.isInteger(v) ? v : v.toFixed(2)}`;
 }
+
+// ---------- Shopping plans ----------
+export type PlanOption = {
+  slug: string; title: string; brand: string | null; category: string; categorySlug: string; store: string; price: number; priceUnit: string | null;
+  statedDiscountPercent: number | null; score: number; whyItFits: string[]; notConfirmed: string[]; priceCheckedHoursAgo: number;
+};
+export type PlanItemResult = {
+  index: number; label: string; quantity: number; categorySlug: string | null; status: "matched" | "no_match"; chosen: number | null; options: PlanOption[]; note: string | null;
+};
+export type BudgetLine = { limit: number; spent: number; remaining: number; over: number };
+export type PlanTotals = {
+  total: number; byCategory: Record<string, number>; uncounted: { index: number; label: string; price: number; priceUnit: string }[];
+  totalBudget: BudgetLine | null; categoryBudgets: Record<string, BudgetLine>; withinBudget: boolean;
+};
+export type Plan = {
+  id: string; status: "RUNNING" | "READY" | "APPROVED" | "CANCELLED" | "FAILED"; version: number; error: string | null; approvedAt: string | null; expiresAt: string;
+  input: { items: { label: string; quantity: number }[]; totalBudget?: number; categoryBudgets: Record<string, number> };
+  result: { items: PlanItemResult[]; totals: PlanTotals; swaps: { index: number; from: string; to: string; saves: number }[]; notes: string[] } | null;
+  steps: { kind: string; outcome: string; summary: string; durationMs: number }[];
+};
+export type PlanCall = { ok: true; plan: Plan } | { ok: false; message: string; changes?: { label: string; was: number; now: number | null }[]; plan?: Plan };
+
+async function planCall(path: string, body?: unknown): Promise<PlanCall> {
+  try {
+    const res = await fetch(`${API_URL}/api/plans${path}`, {
+      method: body === undefined && !path.endsWith("/cancel") ? "GET" : "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const json = (await res.json().catch(() => null)) as (Plan & { message?: string | string[]; changes?: never; plan?: Plan }) | null;
+    if (res.ok && json) return { ok: true, plan: json };
+    const msg = Array.isArray(json?.message) ? json.message.join(" ") : json?.message;
+    return { ok: false, message: msg ?? (res.status === 429 ? "Too many plans just now. Please wait a minute." : "Something went wrong. Please try again."), changes: (json as { changes?: never } | null)?.changes, plan: json?.plan };
+  } catch {
+    return { ok: false, message: "We couldn't reach the server. Please try again." };
+  }
+}
+export const createPlan = (body: unknown) => planCall("", body);
+export const getPlan = (id: string) => planCall(`/${id}`);
+export const cancelPlan = (id: string) => planCall(`/${id}/cancel`, {});
+export const selectPlanOption = (id: string, index: number, slug: string, version: number) => planCall(`/${id}/select`, { index, slug, version });
+export const approvePlan = (id: string, version: number) => planCall(`/${id}/approve`, { version });

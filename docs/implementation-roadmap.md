@@ -62,8 +62,8 @@ Depends on: P2 catalog, P3 links.
 
 ## Priority 5: Agent workflows
 Depends on: P4.
-- [ ] Agent runs persisted with status, step limits, timeouts, cancellation.
-- [ ] Multi-item shopping plans with category budgets, totals, alternatives, user approval.
+- [x] Agent runs persisted with status, step limits, timeouts, cancellation. (2026-10-27: ShoppingPlan + PlanStep, 20 s run limit, cancel, interrupted-run sweeper, 7-day expiry)
+- [x] Multi-item shopping plans with category budgets, totals, alternatives, user approval. (2026-10-27: /plan page; approval re-checks prices; AI-written plans and agent steps that call the model are NOT built yet)
 
 ## Priority 6: Partnerships
 Mostly done (outreach system). Remaining:

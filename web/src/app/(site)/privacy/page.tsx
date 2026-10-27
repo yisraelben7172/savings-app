@@ -44,6 +44,11 @@ export default function PrivacyPage() {
           site&apos;s data in your browser.
         </p>
         <p>
+          <b>Shopping plans.</b> If you build a shopping plan, the items and budgets you type are stored on our servers for 7 days so you can come back to it using its private link, then deleted
+          automatically. A plan isn&apos;t linked to your name or email, and anyone who has the link can see it, so don&apos;t share it if you don&apos;t want others to see your list. Please don&apos;t put personal details in
+          item names.
+        </p>
+        <p>
           <b>If you email us.</b> We keep your message and email address so we can reply and to remember what was discussed.
         </p>
 

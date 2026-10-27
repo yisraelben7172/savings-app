@@ -92,6 +92,19 @@ export class SearchService {
     return out;
   }
 
+  /** The cheapest fresh, trusted price right now for each visible deal; deals that are no longer shown are left out. */
+  async currentBestPrices(slugs: string[], opts: SearchOptions = {}): Promise<Map<string, number>> {
+    const now = opts.now ?? new Date();
+    const offerFilter = trustedOffer(now);
+    const rows = await this.prisma.deal.findMany({
+      where: { AND: [{ slug: { in: slugs } }, dealVisibility(opts.tier ?? 'free', offerFilter, now)] },
+      select: { slug: true, offers: { where: offerFilter, select: { price: true } } },
+    });
+    const out = new Map<string, number>();
+    for (const r of rows) if (r.offers.length) out.set(r.slug, Math.min(...r.offers.map((o) => Number(o.price))));
+    return out;
+  }
+
   /** Side-by-side comparison of 2 to 5 deals the shopper is allowed to see. Unknown or hidden slugs are reported, not guessed. */
   async compare(slugs: string[], opts: SearchOptions = {}) {
     const wanted = [...new Set(slugs.map((s) => s.trim()).filter(Boolean))];

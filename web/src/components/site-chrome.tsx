@@ -58,6 +58,7 @@ export function Footer() {
             <h3>Vault</h3>
             <ul>
               <li><Link href="/assistant">Deal assistant</Link></li>
+              <li><Link href="/plan">Shopping plan</Link></li>
               <li><Link href="/gold">Gold</Link></li>
               <li><Link href="/saved">Saved deals</Link></li>
             </ul>
