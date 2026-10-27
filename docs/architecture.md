@@ -55,6 +55,26 @@ The brief suggests `lib/ai`, `lib/catalog`, `lib/retailers`, `lib/affiliate`... 
 
 Gaps against the brief (see the roadmap): no audit log, no agent runs, no importers beyond CSV feeds, no network report APIs.
 
+## Search, comparison and the AI assistant (`src/search`, `src/ai`, `src/assistant`)
+
+```
+ shopper words ──► (AI proposes a typed request)  or  (plain-text fallback parser)
+                       │ validated + bounded (parseShoppingRequest)
+                       ▼
+ SearchService: Postgres retrieval (visible deals, fresh trusted offers, AI-permitted when asked by the AI)
+                       ▼
+ ranking.ts (pure): hard constraints → relevance, features, stated discount, price, freshness, confidence, preferred store
+                    (no affiliate / commission inputs exist in its types)
+                       ▼
+ facts.ts: verified facts + whyItFits + notConfirmed (no links, no descriptions, nothing commercial)
+                       ▼
+ AssistantService (Anthropic SDK): tools search_deals / compare_deals → reply → claim-check → plain verified fallback
+                       ▼
+ AiUsageService: tokens, estimated cost, latency, outcome; daily budget gate before every call
+```
+
+Decisions: the search is Postgres + code (no separate engine, no embeddings yet); the AI never sees links, store descriptions or anything about affiliate programs; a reply that states anything not in the tool results is replaced, not repaired.
+
 ## Affiliate links (`src/affiliate`, `src/clicks`)
 
 ```

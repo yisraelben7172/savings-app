@@ -15,6 +15,10 @@ API (`.env` locally, Render online). Names only; see `.env.example`.
 | `PORT` | Local only (Render sets it) |
 | `CORS_ORIGIN` | Which websites may call the API from browsers |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | AI assistant (falls back to keyword search without a key) |
+| `ANTHROPIC_MODEL` | Model for the assistant (default `claude-haiku-4-5`). Leave empty for the default |
+| `AI_DAILY_BUDGET_USD` | Daily AI spend cap (rolling 24 hours, default 5). When reached, the assistant uses plain search. 0 turns the AI off |
+| `AI_EFFORT` | `low` (default), `medium` or `high`; only sent to models that support it |
+| `AI_PRICE_INPUT_PER_MTOK`, `AI_PRICE_OUTPUT_PER_MTOK` | Optional: override the built-in price table used for cost estimates (set both) |
 | `CLICK_RETENTION_DAYS` | How long click events are kept before the nightly cleanup deletes them (default 730, minimum 30). Commission records are kept. |
 | `ADMIN_API_KEY` | Admin API. Same value in the website's environment |
 | `OUTREACH_SECRET` | Signs unsubscribe links |
@@ -29,6 +33,11 @@ Website (`web/.env.local` locally, Vercel online): `NEXT_PUBLIC_API_URL`, `ADMIN
 ## Checks before pushing
 - API: `npm test` (Jest unit tests), `npm run test:int` (integration tests on a real database; they use a separate `vault_test` schema in the local Postgres and never touch `public`), `npm run lint` (type check), `npm run build`.
 - Website: `cd web`, `npx eslint src`, `npx next build`. Stop `npm run dev` first or the build and the dev server fight over `web/.next`; if the dev server serves stale styles, stop it and delete `web/.next`.
+
+## Evaluation
+- `npm run eval` re-runs the 38-question search evaluation against the local test database and rewrites `docs/evaluation-results.md`. Run it after any change to search, ranking or the claim checker; it must stay at 100% on hard limits, hidden items, commission-blindness and invented-claim detection.
+- Live model evaluation (spends real money, needs a working `ANTHROPIC_API_KEY`): `EVAL_LIVE=1 npm run test:int -- assistant-live`. Optional `EVAL_LIVE_QUESTIONS=12`.
+- If a Claude call returns 401 (`AuthenticationError`), the key is invalid or revoked: replace it. Admin → AI usage shows these as "AI call failed" and chats keep working on plain search.
 
 ## Deploy
 - Push to `main` on GitHub. Render redeploys the API (`render.yaml`), Vercel redeploys the website (Root Directory `web`).

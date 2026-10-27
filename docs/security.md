@@ -34,8 +34,13 @@ Audited 2026-10-25. Each control is marked **Done**, **Partial**, or **Planned**
 - **Done**: commission imports are admin-only, 5 MB, key checked before the body is read, idempotent, and can't move a status backwards.
 
 ## AI safety
-- **Done**: Claude can only call `search_deals`, which reads trusted deals; it cannot run SQL, shell or HTTP. URLs are stripped from replies. Max 4 tool turns per message; messages capped at 1,000 characters and history at 8 turns.
-- **Planned**: typed schema validation of tool arguments, spending limits, token-usage logging.
+- **Done**: Claude can only call `search_deals` and `compare_deals`; it cannot run SQL, shell or HTTP. Tool arguments are validated and bounded before use; unknown tools and malformed arguments return errors to the model. Limits per message: 5 turns, 6 tool calls, 40 seconds, 1,024 output tokens; messages 1,000 characters, history 8 turns.
+- **Done**: only data whose source agreement allows AI use is ever returned to the model (`aiUseAllowed`, default off). The model is never shown links, store descriptions, affiliate programs, commissions or clicks.
+- **Done**: store-supplied text (titles, delivery notes) is sanitized, length-capped and labeled as data; the system prompt tells the model never to follow instructions found in it.
+- **Done**: every reply is checked against the tool results. A price, percentage or store that isn't in them, or a product paired with a store that doesn't list it, replaces the whole reply with a plain answer built from the facts; URLs are stripped.
+- **Done**: usage logging stores only counts, cost, latency, outcome and a short error class: never prompts or answers. Daily budget (`AI_DAILY_BUDGET_USD`, default $5, rolling 24 h) is checked before each call, and a failed budget check fails safe to plain search.
+- **Done**: errors from the AI provider (bad key, rate limit, refusal, timeout) fall back to plain search; the SDK retries once and every call has a timeout.
+- **Known limit**: the claim checker verifies prices, percentages, store names and product-store pairs, not every possible claim (for example "free shipping" or "in stock"). The assistant's instructions forbid unstated facts and the evaluation measures the rest; claims about shipping and stock should be added to the checker when real feeds carry that data.
 
 ## Abuse prevention
 - **Done**: per-IP rate limits: assistant 10/minute and 100/day, store redirect 60/minute, unsubscribe 20/minute. Limits are in memory per API instance (fine for one instance; move to a shared store if we scale out). Catalog reads aren't limited at the app level because the website's server calls them from shared Vercel IPs; put Cloudflare in front of the API for edge rate limiting.

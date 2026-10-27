@@ -45,13 +45,20 @@ Depends on: P2 (retailers, sources). Real links need program approval.
 - [ ] Consent banner and anonymous session IDs on clicks (needed before using `sessionId`).
 - [ ] Open question for the owner: Amazon's required Associate wording and any restrictions on how Amazon links may be presented (to confirm from the current Associates agreement before enabling).
 
-## Priority 4: AI shopping intelligence
+## Priority 4: AI shopping intelligence (built 2026-10-27; the live model path is untested without a working Claude key)
 Depends on: P2 catalog, P3 links.
-- [ ] Typed shopping-request schema (budget, features, exclusions, brands, retailers...) with validation of model output.
-- [ ] Search service: Postgres full-text + filters first; semantic search only if needed.
-- [ ] Comparison tool, freshness check tool, link tool; deterministic filters for hard constraints; ranking that ignores commission.
-- [ ] Evaluation set of realistic queries; measure constraint satisfaction and wrong claims.
-- [ ] Token-usage logging, model choice per task, spend limits.
+- [x] Typed shopping request (`src/search/shopping-request.ts`): query, category, min/max price, required features, excluded terms, brands, preferred stores, use case, sort, limit. AI output is validated and bounded (untrusted input) before anything runs; invalid requests go back to the model as tool errors.
+- [x] Search (`src/search/*`, `GET /api/search`): retrieval in Postgres for recall, then deterministic hard-constraint filtering and transparent ranking in pure code. Hard limits (category, budget, brand, exclusions) need evidence and are exact; features rank higher when the listing confirms them and are reported as "not confirmed" otherwise. Whole-word, stemmed matching with a few synonyms; enough of the query must match (both words of a two-word query). Every result carries reasons and unknowns. No semantic/embedding search: not justified yet (the catalog is small and structured); revisit with real data.
+- [x] Ranking ignores commission by construction: its input type has no affiliate, program, click or commission fields, weights are documented, and the evaluation proves identical answers when large commissions are attached to rival deals. Missing information (no stated regular price, one store, no brand) is reported as unknown, never as a penalty or an invented fact.
+- [x] Comparison (`GET /api/compare`, assistant tool, `/compare` page): computed in code; ties listed, no "lowest" across different kinds of products or price units, stated discounts only, price-history facts, warnings for what can't be compared.
+- [x] Assistant on the official Anthropic SDK: tools `search_deals` and `compare_deals` with validated arguments, AI-permitted data only, max 5 turns, 6 tool calls, 40 s, forced plain answer on the last turn, URLs stripped, store text treated as data. Every reply is checked against the tool results: any price, percentage or store not in them, or a product paired with a store that doesn't list it, replaces the reply with a plain verified answer. Falls back to ranked keyword search without a key, on errors, refusals, or when the budget is used up.
+- [x] AI usage logging (`AiUsage` table, migration 20261025200000_ai_usage; Admin → AI usage): runs, tokens, estimated cost, latency, outcome; no message content. Daily budget `AI_DAILY_BUDGET_USD` (default $5, rolling 24 h; 0 turns the AI off). Costs are estimates from published rates (override with `AI_PRICE_INPUT_PER_MTOK` / `AI_PRICE_OUTPUT_PER_MTOK`); unknown models are costed at the highest tier.
+- [x] Evaluation (`npm run eval`, results in `docs/evaluation-results.md`): 38 labeled questions over a synthetic 39-deal catalog with traps (stale, out of stock, unapproved store, disabled source, Gold-only, AI-restricted). Result: 38/38 correct, 0 hard-limit violations, 0 hidden items shown, same answers twice and under huge commissions, 42/42 invented claims caught, 0/36 honest replies flagged. The evaluation found and drove fixes for three real bugs (spec numbers like "4K" dropped, words matched inside other words, one matching word was enough).
+- [x] Tests: 152 unit tests (requests, ranking, comparison, claim checker, pricing, assistant with a scripted fake model) and 24 database tests.
+- [ ] **Live model evaluation (needs the owner)**: `EVAL_LIVE=1 npm run test:int -- assistant-live` runs the real assistant on real model calls (costs a few cents with a small model). Blocked: the local `.env` key is rejected with 401, and none is set in Render. Until it runs, answer quality, tool-use behavior and real cost per chat are unmeasured.
+- [ ] Model choice per task: the assistant uses one configurable model (`ANTHROPIC_MODEL`, default `claude-haiku-4-5`, which the project already used). Cheaper/stronger routing, prompt caching and effort tuning wait for live measurements.
+- [ ] Freshness-check and link tools for the AI: not exposed. Freshness is already enforced in the data; links are never shown to the model (the app shows verified links).
+- [ ] Per-user AI limits (20 free chats a day, unlimited Gold) need shopper accounts.
 
 ## Priority 5: Agent workflows
 Depends on: P4.

@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, FileText, Handshake, Inbox, LayoutDashboard, Package, Send, Settings, Store, Users } from "lucide-react";
+import { Database, FileText, Handshake, Inbox, LayoutDashboard, Package, Send, Settings, Sparkles, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/stores", label: "Stores", icon: Store },
   { href: "/admin/sources", label: "Data sources", icon: Database },
   { href: "/admin/affiliate", label: "Affiliate links", icon: Handshake },
+  { href: "/admin/ai", label: "AI usage", icon: Sparkles },
   { href: "/admin/queue", label: "Approval queue", icon: Send },
   { href: "/admin/partners", label: "Partners", icon: Users },
   { href: "/admin/inbox", label: "Inbox", icon: Inbox },

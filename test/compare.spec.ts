@@ -49,6 +49,14 @@ describe('comparison', () => {
     expect(w).toMatch(/hasn't stated a regular price/);
   });
 
+  it('does not call anything "lowest" across different kinds of products, even at the same unit', () => {
+    const c = buildComparison([item('tv', { categorySlug: 'electronics' }), item('lamp', { categorySlug: 'home', categoryName: 'Home', offers: [offer('Target', 20)] })], NOW);
+    expect(c.highlights.lowestPrice).toEqual([]);
+    expect(c.warnings.join(' ')).toMatch(/no lowest price is highlighted/);
+    // other facts are still reported
+    expect(c.items.map((i) => i.bestPrice)).toEqual([100, 20]);
+  });
+
   it('lines up attributes from real feeds', () => {
     const c = buildComparison([item('a', { attributes: { color: 'Black' } }), item('b', { attributes: { size: '10', color: 'Red' } })], NOW);
     expect(c.attributeKeys).toEqual(['color', 'size']);

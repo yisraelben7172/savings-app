@@ -20,7 +20,7 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Models: Category, Merchant (trustScore, approved, domain), Deal (bestPrice, discountPct, goldOnly, goldEarlyUntil), Offer (one per store), Click, PriceHistory, User (tier FREE/GOLD), SavedDeal, Alert, ChatSession/ChatMessage. Demo data in prisma/seed.ts.
 - API under /api: GET /health, /meta, /categories, /deals (category, q, maxPrice, sort, tier), /deals/:slug (offers + price history), GET /go/:offerId (logs click, adds affiliate tag, redirects), POST /assistant/chat.
 - Trust gate (src/deals/trust.ts): only approved merchants with trustScore >= 70; links must be https on the merchant's own domain. Never bypass it.
-- AI assistant (src/assistant): Claude via ANTHROPIC_API_KEY with a search_deals tool; it may only recommend deals from our DB and URLs are stripped from replies. Falls back to keyword search without a key.
+- AI assistant (src/assistant): Claude through the official Anthropic SDK (ANTHROPIC_API_KEY, model from ANTHROPIC_MODEL), tools search_deals and compare_deals, validated and limited; see "Search, comparison and AI (Priority 4)" below. Falls back to ranked keyword search without a key, on errors, or when the daily budget is used up.
 
 ## Product decisions
 - Categories: Electronics, Clothing, Beauty, Hotels, Car rentals, Concerts, Home, Flights (flights de-emphasized; shopping leads).
@@ -84,11 +84,21 @@ Vault is a US deals app + website: it collects publicly advertised deals (price 
 - Admin → Stores no longer holds affiliate status or link method; those live on the program.
 - Tests now: 95 unit + 15 database integration.
 
+## Search, comparison and AI (Priority 4, built 2026-10-27; live model untested)
+- src/search: typed ShoppingRequest (validated; AI output is untrusted), SearchService (Postgres retrieval + pure ranking in ranking.ts), compare.ts, facts.ts. Public `GET /api/search`, `GET /api/compare?slugs=a,b,c`; site page /compare (linked from the deal page and the chat).
+- Ranking rules: hard limits (category, budget, brand, excluded words) exact and need evidence; features rank up when confirmed and are listed as "not confirmed" otherwise; a discount exists only if the store stated a regular price; whole-word stemmed matching, both words of a 2-word query must match. **Ranking input types must never contain affiliate, program, click or commission data** (proven by the eval).
+- src/ai: pricing.ts (estimated cost table from the claude-api skill, cached 2026-10-06; unknown model = highest tier), usage.service.ts (AiUsage table, daily budget AI_DAILY_BUDGET_USD default $5), claim-check.ts (a reply with a price/percent/store not in the tool results, or a product paired with a store that doesn't list it, is replaced by a plain verified answer). Admin → AI usage.
+- The model is never shown links, descriptions or anything commercial. Keep using the official SDK (`@anthropic-ai/sdk`), not raw fetch. `effort` is only sent to 5.x models.
+- Eval: `npm run eval` (writes docs/evaluation-results.md; must stay at 100% on safety rows). Live-model eval is gated: `EVAL_LIVE=1 npm run test:int -- assistant-live` (costs money; ask the owner first).
+- Local .env has a Claude key that Anthropic rejects (401); the fallback works. A valid key is needed before the AI can be measured or enabled.
+- Tests now: 152 unit + 24 database integration.
+
 ## Next steps
+0. Owner: provide a valid Claude API key (local .env and Render) and approve a small live evaluation; confirm the daily AI budget.
 1. Owner: finish the Render Blueprint, send the vault-api address; in Vercel set NEXT_PUBLIC_API_URL, ADMIN_API_KEY (same as Render), ADMIN_PASSWORD, then redeploy. Add ADMIN_API_KEY, WEB_URL (and later Gmail/Telegram values) in Render.
 2. Owner: get a first real feed (a brand's product CSV, or a network catalog once approved) and onboard it via Admin → Stores and Data sources. Apply to affiliate networks; once approved, set up the program in Admin → Affiliate links (see docs/affiliate-integrations.md).
 3. Owner: confirm Amazon's required Associate wording and link-presentation rules before enabling the Amazon program.
-4. Roadmap Priority 4: typed shopping requests, search, comparisons, ranking that ignores commission, evaluation set, AI cost logging. Then 5 (agents).
+4. Roadmap Priority 5: controlled shopping agents (multi-step runs, multi-item plans with category budgets, persisted run status, user approval). Then 6 remainder (prospect research fields, statuses) and 7 (analytics, price alerts, accounts).
 5. Later: network report APIs, consent banner + session IDs, scheduled feed pulls, demo-catalog removal step, Expo app in mobile/, shopper accounts, Stripe for Gold, price alerts.
 
 Full plan doc: https://claude.ai/artifact/623vtcT6qQmNpLwMXyR89y

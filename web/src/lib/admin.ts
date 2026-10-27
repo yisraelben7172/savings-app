@@ -243,6 +243,31 @@ export type CatalogHealth = {
   invalidLinks: { id: string; store: string; url: string }[];
 };
 
+// ---------- AI usage ----------
+
+export type AiWindow = {
+  runs: number;
+  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  toolCalls: number;
+  avgLatencyMs: number;
+  p95LatencyMs: number | null;
+  outcomes: Record<string, number>;
+};
+
+export type AiUsage = { budgetUsd: number; spentLast24hUsd: number; remainingUsd: number; priceNote: string; last24h: AiWindow; last7d: AiWindow; last30d: AiWindow };
+
+export const AI_OUTCOME_LABEL: Record<string, string> = {
+  ok: "Answered by the AI",
+  fallback_nokey: "AI not set up (plain search)",
+  fallback_budget: "Daily budget reached (plain search)",
+  fallback_error: "AI call failed (plain search)",
+  blocked_claim: "Unverified claim blocked (plain answer)",
+  refusal: "AI declined (plain search)",
+  limit: "Hit a limit (plain answer)",
+};
+
 // ---------- affiliate ----------
 
 export type ProgramStatus = "NOT_APPLIED" | "APPLIED" | "APPROVED" | "REJECTED" | "PAUSED";

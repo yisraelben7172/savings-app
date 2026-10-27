@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { PriceHistory } from "@/components/price-history";
 import { SaveButton } from "@/components/save-button";
 import { StoreList } from "@/components/store-list";
-import { getDeal, money } from "@/lib/api";
+import { getDeal, getDeals, money } from "@/lib/api";
 import { CategoryIcon } from "@/lib/icons";
 
 type Props = PageProps<"/deals/[slug]">;
@@ -14,7 +14,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const deal = await getDeal(slug).catch(() => null);
   return deal
-    ? { title: deal.title, description: `${money(deal.bestPrice)} (was ${money(deal.originalPrice)}) at ${deal.storeCount} verified stores.` }
+    ? {
+        title: deal.title,
+        description: `${money(deal.bestPrice)}${deal.saved > 0 ? ` (store list price ${money(deal.originalPrice)})` : ""} at ${deal.storeCount} verified store${deal.storeCount === 1 ? "" : "s"}.`,
+      }
     : { title: "Deal" };
 }
 
@@ -33,6 +36,7 @@ async function DealBody({ params }: Props) {
   }
   if (!deal) notFound();
   const c = deal.category;
+  const similar = (await getDeals({ category: c.slug, limit: 6 }).catch(() => [])).filter((d) => d.slug !== deal.slug).slice(0, 3);
 
   return (
     <>
@@ -85,6 +89,24 @@ async function DealBody({ params }: Props) {
             <h2>Choose where to buy</h2>
             <StoreList offers={deal.offers} priceUnit={deal.priceUnit} placement="web-deal-page" />
           </div>
+          {similar.length > 0 && (
+            <div className="panel">
+              <h2>Compare with similar deals</h2>
+              <div className="hist">
+                <ul className="rows" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {similar.map((d) => (
+                    <li key={d.slug} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "8px 0" }}>
+                      <Link href={`/deals/${d.slug}`}>{d.title}</Link>
+                      <span className="num">{money(d.bestPrice)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link className="btn" style={{ marginTop: 12 }} href={`/compare?slugs=${[deal.slug, ...similar.map((d) => d.slug)].join(",")}`}>
+                  Compare side by side
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

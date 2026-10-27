@@ -1,11 +1,12 @@
 "use client";
 
 import { ArrowRight, Sparkles, X } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { money, sendChat, type Deal } from "@/lib/api";
 import { useDealUI } from "./providers";
 
-type Turn = { role: "user" | "assistant"; content: string; deals?: Deal[] };
+type Turn = { role: "user" | "assistant"; content: string; deals?: Deal[]; compareSlugs?: string[] };
 
 const SUGGESTIONS = ["Running shoes under $80", "Moisturizer for dry skin", "Headphones deal", "Car rental this weekend"];
 const GREETING = "Hi! Tell me what you're shopping for and your budget. I'll find the best deal from stores we've checked.";
@@ -38,7 +39,7 @@ export function ChatPanel({
     setBusy(true);
     try {
       const r = await sendChat(q, history);
-      setTurns((t) => [...t, { role: "assistant", content: r.reply, deals: r.deals }]);
+      setTurns((t) => [...t, { role: "assistant", content: r.reply, deals: r.deals, compareSlugs: r.compareSlugs }]);
     } catch {
       setTurns((t) => [...t, { role: "assistant", content: "I couldn't reach our deal database just now. Please try again in a moment." }]);
     } finally {
@@ -109,6 +110,11 @@ export function ChatPanel({
                 <span className="go">Compare {d.storeCount} store{d.storeCount === 1 ? "" : "s"}</span>
               </button>
             ))}
+            {t.compareSlugs && t.compareSlugs.length > 1 && (
+              <Link href={`/compare?slugs=${t.compareSlugs.join(",")}`} className="pick go" style={{ textAlign: "center" }} onClick={onClose}>
+                Compare these side by side
+              </Link>
+            )}
           </div>
         ))}
         {busy && (

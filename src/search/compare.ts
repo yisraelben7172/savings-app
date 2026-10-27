@@ -63,7 +63,8 @@ export function buildComparison(items: CompareItem[], now: Date = new Date()) {
 
   const warnings: string[] = [];
   const sameUnit = new Set(rows.map((r) => r.priceUnit ?? '')).size === 1;
-  if (new Set(items.map((i) => i.categorySlug)).size > 1) warnings.push("These are different kinds of products, so their prices aren't directly comparable.");
+  const sameKind = new Set(items.map((i) => i.categorySlug)).size === 1;
+  if (!sameKind) warnings.push("These are different kinds of products, so their prices aren't directly comparable and no lowest price is highlighted.");
   if (!sameUnit) warnings.push('Prices are quoted per different units (for example per day and per night), so the lowest price is not highlighted.');
   for (const r of rows) {
     if (r.storeCount === 1) warnings.push(`${r.title} is listed by only one store.`);
@@ -83,7 +84,7 @@ export function buildComparison(items: CompareItem[], now: Date = new Date()) {
     items: rows,
     attributeKeys,
     highlights: {
-      lowestPrice: sameUnit ? ties((r) => r.bestPrice, (a, b) => a < b) : [],
+      lowestPrice: sameUnit && sameKind ? ties((r) => r.bestPrice, (a, b) => a < b) : [],
       biggestStatedDiscount: ties((r) => r.statedDiscountPercent, (a, b) => a > b),
       mostStores: ties((r) => r.storeCount, (a, b) => a > b),
       atLowestPriceInHistory: rows.filter((r) => r.priceHistory?.atLowest).map((r) => r.slug),
