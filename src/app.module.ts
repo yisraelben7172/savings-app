@@ -14,6 +14,7 @@ import { CatalogModule } from './catalog/catalog.module';
 import { AffiliateModule } from './affiliate/affiliate.module';
 import { SearchModule } from './search/search.module';
 import { PlansModule } from './plans/plans.module';
+import { TripsModule } from './trips/trips.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PlansModule } from './plans/plans.module';
     AffiliateModule,
     SearchModule,
     PlansModule,
+    TripsModule,
   ],
   controllers: [HealthController],
 })

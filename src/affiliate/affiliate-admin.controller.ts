@@ -4,6 +4,7 @@ import { ArrayMaxSize, IsArray, IsIn, IsObject, IsOptional, IsString, IsUrl, Mat
 import { AdminGuard } from '../admin/admin.guard';
 import { isLinkOnMerchantDomain } from '../deals/trust';
 import { PrismaService } from '../prisma/prisma.service';
+import { validateBookingFormat } from '../trips/trip-links';
 import { CommissionImportService } from './commission-import.service';
 import { buildTrackedUrl, cleanHosts, validateLinkConfig } from './link-builder';
 
@@ -21,6 +22,8 @@ class ProgramPatchDto {
   @IsOptional() @IsString() @MaxLength(2000) linkTemplate?: string;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) allowedTrackingHosts?: string[];
   @IsOptional() @IsString() @MaxLength(500) disclosureText?: string;
+  @IsOptional() @IsString() @MaxLength(2000) bookingLinkTemplate?: string;
+  @IsOptional() @IsString() @MaxLength(500) bookingLinkDocUrl?: string;
   @IsOptional() @IsString() @MaxLength(4000) commissionNotes?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) applicationUrl?: string;
   @IsOptional() @IsString() @MaxLength(4000) notes?: string;
@@ -94,9 +97,16 @@ export class AffiliateAdminController {
 
   @Patch('programs/:id')
   async update(@Param('id') id: string, @Body() dto: ProgramPatchDto) {
-    const cur = await this.prisma.affiliateProgram.findUnique({ where: { id } });
+    const cur = await this.prisma.affiliateProgram.findUnique({ where: { id }, include: { merchant: { select: { domain: true } } } });
     if (!cur) throw new NotFoundException('Program not found');
-    const { reportConfig, allowedTrackingHosts, ...rest } = dto;
+    const { reportConfig, allowedTrackingHosts, bookingLinkTemplate, bookingLinkDocUrl, ...rest } = dto;
+    // Travel pre-fill: only a format documented by the partner, with where it is documented. Empty turns it off.
+    const booking = {
+      bookingLinkTemplate: bookingLinkTemplate !== undefined ? bookingLinkTemplate.trim() || null : cur.bookingLinkTemplate,
+      bookingLinkDocUrl: bookingLinkDocUrl !== undefined ? bookingLinkDocUrl.trim() || null : cur.bookingLinkDocUrl,
+    };
+    const bookingProblems = validateBookingFormat(booking.bookingLinkTemplate, booking.bookingLinkDocUrl, cur.merchant.domain);
+    if (bookingProblems.length) throw new BadRequestException(bookingProblems.join(' '));
     const next = {
       linkMethod: dto.linkMethod ?? cur.linkMethod,
       accountTag: dto.accountTag !== undefined ? dto.accountTag.trim() || null : cur.accountTag,
@@ -110,7 +120,7 @@ export class AffiliateAdminController {
     return this.prisma.affiliateProgram.update({
       where: { id },
       data: {
-        ...rest, ...next,
+        ...rest, ...next, ...booking,
         ...(dto.status === 'APPLIED' && !cur.appliedAt ? { appliedAt: now } : {}),
         ...(dto.status === 'APPROVED' && !cur.approvedAt ? { approvedAt: now } : {}),
         ...(reportConfig !== undefined ? { reportConfig: reportConfig as Prisma.InputJsonValue } : {}),

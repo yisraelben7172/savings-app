@@ -16,7 +16,7 @@ const cand: Candidate = {
   offers: [offer('Zappos', 58, 112), offer('Amazon', 64)],
 };
 const ranked = rankCandidates([cand], { ...requestFromText('running shoes'), limit: 5 }, NOW);
-const result: SearchResult = { ranked: ranked[0], card: { id: 'd1', slug: 'road-shoes', title: 'Road running shoes', bestPrice: 58 } as unknown as SearchResult['card'] };
+const result: SearchResult = { ranked: ranked[0], offers: [], card: { id: 'd1', slug: 'road-shoes', title: 'Road running shoes', bestPrice: 58 } as unknown as SearchResult['card'] };
 
 type Block = Record<string, unknown>;
 const msg = (content: Block[], stop: string, input = 1000, output = 200) =>

@@ -15,4 +15,4 @@ export const site = {
 };
 
 /** Update this date whenever the privacy policy or disclosure text changes. */
-export const LEGAL_UPDATED = "October 27, 2026";
+export const LEGAL_UPDATED = "October 29, 2026";

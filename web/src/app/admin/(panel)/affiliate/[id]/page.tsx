@@ -82,6 +82,18 @@ export default async function ProgramPage({ params }: PageProps<"/admin/affiliat
                     <label htmlFor="disclosureText">Required disclosure</label>
                     <input id="disclosureText" name="disclosureText" defaultValue={p.disclosureText ?? ""} maxLength={500} placeholder="Exact wording the program requires near its links" />
                   </div>
+                  <div className="field full">
+                    <label htmlFor="bookingLinkTemplate">Travel booking link format (optional)</label>
+                    <textarea id="bookingLinkTemplate" name="bookingLinkTemplate" rows={2} defaultValue={p.bookingLinkTemplate ?? ""} placeholder="Paste only a format from the partner's own documentation" />
+                    <span className="hint">
+                      Lets trip plans open this store with dates and guests filled in. Use only a format the partner documents or shows in the network dashboard, with
+                      {" {checkIn} {checkOut} {adults} {children} {travelers} {origin} {destination}"}. Leave empty and shoppers see the dates to enter, with a copy button.
+                    </span>
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="bookingLinkDocUrl">Where that format is documented</label>
+                    <input id="bookingLinkDocUrl" name="bookingLinkDocUrl" type="url" defaultValue={p.bookingLinkDocUrl ?? ""} placeholder="https:// link to the partner's docs or dashboard page" />
+                  </div>
                   <div className="field">
                     <label htmlFor="applicationUrl">Application link</label>
                     <input id="applicationUrl" name="applicationUrl" type="url" defaultValue={p.applicationUrl ?? ""} placeholder="https://" />

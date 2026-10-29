@@ -49,6 +49,12 @@ export default function PrivacyPage() {
           item names.
         </p>
         <p>
+          <b>Trip plans.</b> If you plan a trip, we store the destination, dates, number of adults and children, departure airport, budget and any hotel name you typed, along with the
+          options we found, for 7 days so you can come back using its private link. After that the plan expires and is deleted a week later. If you answer &quot;Did you complete this
+          booking?&quot;, we store only that yes or no. A trip plan isn&apos;t linked to your name or email and holds no booking or payment details: you book and pay on the partner&apos;s site,
+          under their privacy policy. Anyone with the link can see the plan.
+        </p>
+        <p>
           <b>If you email us.</b> We keep your message and email address so we can reply and to remember what was discussed.
         </p>
 

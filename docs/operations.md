@@ -35,7 +35,7 @@ Website (`web/.env.local` locally, Vercel online): `NEXT_PUBLIC_API_URL`, `ADMIN
 - Website: `cd web`, `npx eslint src`, `npx next build`. Stop `npm run dev` first or the build and the dev server fight over `web/.next`; if the dev server serves stale styles, stop it and delete `web/.next`.
 
 ## Evaluation
-- `npm run eval` re-runs the 38-question search evaluation against the local test database and rewrites `docs/evaluation-results.md`. Run it after any change to search, ranking or the claim checker; it must stay at 100% on hard limits, hidden items, commission-blindness and invented-claim detection.
+- `npm run eval` re-runs the 38-question search evaluation and the 14-request trip planner evaluation against the local test database and rewrites `docs/evaluation-results.md` and `docs/trip-evaluation-results.md`. Run it after any change to search, ranking or the claim checker; it must stay at 100% on hard limits, hidden items, commission-blindness and invented-claim detection.
 - Live model evaluation (spends real money, needs a working `ANTHROPIC_API_KEY`): `EVAL_LIVE=1 npm run test:int -- assistant-live`. Optional `EVAL_LIVE_QUESTIONS=12`.
 - If a Claude call returns 401 (`AuthenticationError`), the key is invalid or revoked: replace it. Admin → AI usage shows these as "AI call failed" and chats keep working on plain search.
 
@@ -85,3 +85,13 @@ Jobs are idempotent: an email is marked SENT only after Gmail accepts it; inboun
 | Plan purge | daily 3:45 Eastern | Deletes plans past their 7-day expiry (steps are deleted with them). |
 
 Creating a plan is limited to 6 a minute and 40 a day per visitor (`PLAN_LIMITS` in `src/rate-limits.ts`). A run stops after 20 seconds. Rollback SQL: `prisma/rollbacks/20261027120000_shopping_plans.down.sql` (deletes all plans; needs the owner's go-ahead).
+
+## Trip plans (jobs, limits, data)
+| Job | Schedule | What it does |
+|---|---|---|
+| Trip purge | daily 3:50 Eastern | Marks trip plans past their 7 days as EXPIRED, deletes them a week later, and deletes plans stuck in DRAFT for over an hour (a crash mid-build). |
+
+- Creating a trip plan is limited like shopping plans (`TRIP_LIMITS`: 6 a minute, 40 a day per visitor) and stops after 15 seconds of searching (at most 4 searches).
+- Travel prices come only from offers with a date window (`Offer.startDate`/`endDate`). The demo travel listings are refreshed by the seed (window: today to a year out). Real travel data needs a source with a permission record, like any other source.
+- Pre-filled booking links: in Admin → Affiliate links → a travel store's program, paste a booking link format **only** from the partner's own docs or network dashboard, and the link to where it is documented. Without both, trip plans show shoppers what to enter, with a copy button.
+- Migration `20261029120000_trip_plans` is additive (new tables and nullable columns). Rollback SQL: `prisma/rollbacks/20261029120000_trip_plans.down.sql` (deletes all trip plans and the travel columns; needs the owner's go-ahead).

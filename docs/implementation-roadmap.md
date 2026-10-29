@@ -64,6 +64,9 @@ Depends on: P2 catalog, P3 links.
 Depends on: P4.
 - [x] Agent runs persisted with status, step limits, timeouts, cancellation. (2026-10-27: ShoppingPlan + PlanStep, 20 s run limit, cancel, interrupted-run sweeper, 7-day expiry)
 - [x] Multi-item shopping plans with category budgets, totals, alternatives, user approval. (2026-10-27: /plan page; approval re-checks prices; AI-written plans and agent steps that call the model are NOT built yet)
+- [x] Trip planner Step 1: AI plans, the shopper approves, partner sites book. (2026-10-29, spec `docs/trip-planner-spec.md`: TripPlan/TripItem, POST/GET /api/trips + select/approve/cancel/report, assistant tool `plan_trip`, /trip and /trip/[id] pages, "Plan a trip" on the home page; approval re-checks prices; Vault never books or pays; demo travel data only.)
+- [ ] Trip planner Step 2 (booking and payment inside Vault): NOT in scope. Needs booking APIs, payment handling, Seller of Travel registration and a travel lawyer first.
+- [ ] Trip planner, real data: a travel network feed (e.g. Travelpayouts, Expedia/Booking via their networks) with a permission record, a CSV/API importer that carries offer dates and stated cancellation terms, and per-program documented booking-link formats entered in Admin → Affiliate links.
 
 ## Priority 6: Partnerships
 Mostly done (outreach system). Remaining:
@@ -76,7 +79,7 @@ Mostly done (outreach system). Remaining:
 - [ ] Retailer and catalog health pages, ingestion history, stale offers, invalid links.
 - [ ] Analytics: searches, impressions, selections, clicks, commissions, AI cost.
 - [ ] Price alerts (background job, consented channels), shopper accounts, Stripe for Gold, Expo app.
-- [ ] Travel as its own domain model (dates, travelers, cancellation terms), not the product schema.
+- [x] Travel as its own domain model (dates, travelers, cancellation terms), not the product schema. (2026-10-29: TripPlan/TripItem; offer date windows and stated cancellation terms on Offer)
 
 ## Blocked on the owner
 - Render: the API address (deploy status), and plan upgrades before launch.

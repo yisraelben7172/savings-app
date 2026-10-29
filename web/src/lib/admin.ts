@@ -308,6 +308,8 @@ export type Program = {
   linkTemplate: string | null;
   allowedTrackingHosts: string[];
   disclosureText: string | null;
+  bookingLinkTemplate: string | null;
+  bookingLinkDocUrl: string | null;
   commissionNotes: string | null;
   applicationUrl: string | null;
   appliedAt: string | null;

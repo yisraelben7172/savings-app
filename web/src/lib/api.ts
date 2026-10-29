@@ -45,7 +45,7 @@ export type DealDetail = Deal & {
   priceHistory: { price: number; date: string }[];
 };
 
-export type ChatReply = { reply: string; deals: Deal[]; compareSlugs?: string[] };
+export type ChatReply = { reply: string; deals: Deal[]; compareSlugs?: string[]; trip?: { id: string; destination: string; startDate: string; endDate: string; total: number; withinBudget: boolean } };
 
 export type CompareItem = {
   slug: string;
@@ -174,3 +174,48 @@ export const getPlan = (id: string) => planCall(`/${id}`);
 export const cancelPlan = (id: string) => planCall(`/${id}/cancel`, {});
 export const selectPlanOption = (id: string, index: number, slug: string, version: number) => planCall(`/${id}/select`, { index, slug, version });
 export const approvePlan = (id: string, version: number) => planCall(`/${id}/approve`, { version });
+
+// ---------- Trip plans (Vault plans; the shopper approves; partner sites book. Vault never books or pays.) ----------
+export type TripKind = "FLIGHT" | "HOTEL" | "CAR";
+export type TripStoreOption = { offerId: string; store: string; storeSlug: string; unitPrice: number; cancellationText: string | null; priceCheckedAt: string };
+export type TripItem = {
+  id: string; kind: TripKind; dealSlug: string; title: string; namedMatch: boolean; selected: boolean; available: boolean; unitLabel: "night" | "day" | "trip";
+  quantity: number; chosenOfferId: string | null; stores: TripStoreOption[]; unitPrice: number | null; totalPrice: number | null; cancellationText: string | null;
+  priceCheckedAt: string | null; selfReport: string | null;
+};
+export type TripBooking = {
+  itemId: string; kind: TripKind; title: string; store: string; goUrl: string; prefilled: boolean; details: string; disclosure: string | null; attribution: string | null; selfReport: string | null;
+};
+export type Trip = {
+  id: string; status: "DRAFT" | "READY" | "APPROVED" | "EXPIRED" | "CANCELLED"; version: number; destination: string; startDate: string; endDate: string; nights: number;
+  adults: number; children: number; originAirport: string | null; budgetUsd: number | null; hotelName: string | null; wants: TripKind[]; notes: string[]; approvedAt: string | null; expiresAt: string;
+  items: TripItem[];
+  totals: { total: number; budget: BudgetLine | null; withinBudget: boolean; missingKinds: TripKind[] };
+  suggestion: { kind: TripKind; fromItemId: string; toItemId: string; toOfferId: string; title: string; store: string; saves: number; withinBudgetAfter: boolean } | null;
+  booking: TripBooking[];
+};
+export type TripCall = { ok: true; trip: Trip } | { ok: false; message: string; changes?: { title: string; store: string; was: number; now: number | null }[]; trip?: Trip };
+
+async function tripCall(path: string, body?: unknown): Promise<TripCall> {
+  try {
+    const res = await fetch(`${API_URL}/api/trips${path}`, {
+      method: body === undefined ? "GET" : "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      cache: "no-store",
+    });
+    const json = (await res.json().catch(() => null)) as (Trip & { message?: string | string[]; changes?: never; plan?: Trip }) | null;
+    if (res.ok && json) return { ok: true, trip: json };
+    const msg = Array.isArray(json?.message) ? json.message.join(" ") : json?.message;
+    if (res.status === 404) return { ok: false, message: "This trip plan doesn't exist or has been deleted." };
+    return { ok: false, message: msg ?? (res.status === 429 ? "Too many trip plans just now. Please wait a minute." : "Something went wrong. Please try again."), changes: (json as { changes?: never } | null)?.changes, trip: json?.plan };
+  } catch {
+    return { ok: false, message: "We couldn't reach the server. Please try again." };
+  }
+}
+export const createTrip = (body: unknown) => tripCall("", body);
+export const getTrip = (id: string) => tripCall(`/${id}`);
+export const selectTripOffer = (id: string, itemId: string, offerId: string, version: number) => tripCall(`/${id}/items/${itemId}/select`, { offerId, version });
+export const approveTrip = (id: string, version: number) => tripCall(`/${id}/approve`, { version });
+export const cancelTrip = (id: string) => tripCall(`/${id}/cancel`, {});
+export const reportTripBooking = (id: string, itemId: string, booked: boolean) => tripCall(`/${id}/items/${itemId}/report`, { booked });

@@ -88,3 +88,9 @@ If the desired design is not allowed, we document the limit here and choose a co
 3. Implement the adapter against official docs; mock responses in tests.
 4. Record the source permission: allowed fields, caching and expiry, attribution, AI-use permission.
 5. Enable in the admin only after a live test call succeeds.
+
+## Travel booking links (trip planner, 2026-10-29)
+Trip plans can open a travel store with the shopper's dates and guests already filled in, but only through a format the partner documents. In Admin → Affiliate links → the store's program:
+- **Travel booking link format**: paste the exact link format from the partner's docs or the network dashboard, using `{checkIn}` `{checkOut}` `{adults}` `{children}` `{travelers}` `{origin}` `{destination}`. It must be https on the store's own domain.
+- **Where that format is documented**: the https link to that page. Without it the format is not used.
+Never guess a partner's parameters. If no documented format exists, leave both empty: the plan shows the dates and guests to enter, with a copy button. The tracked affiliate link (link template above) still wraps the page as usual.

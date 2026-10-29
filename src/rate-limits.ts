@@ -7,3 +7,6 @@ export const PLAN_LIMITS = { burst: { limit: 6, ttl: 60_000 }, daily: { limit: 4
 
 /** The assistant costs money per message: 10 a minute and 100 a day per visitor. */
 export const ASSISTANT_LIMITS = { burst: { limit: 10, ttl: 60_000 }, daily: { limit: 100, ttl: 86_400_000 } };
+
+/** Creating a trip plan runs up to 4 searches: same limits as shopping plans. */
+export const TRIP_LIMITS = PLAN_LIMITS;

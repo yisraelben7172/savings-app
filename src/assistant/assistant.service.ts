@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { checkReply, plainReply } from '../ai/claim-check';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { checkReply, plainReply, plainTripReply } from '../ai/claim-check';
 import { ANTHROPIC_CLIENT, type AnthropicLike } from '../ai/client';
 import { estimateCost, supportsEffort } from '../ai/pricing';
 import { AiUsageService, type UsageOutcome } from '../ai/usage.service';
@@ -9,12 +9,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { dealFacts } from '../search/facts';
 import { SearchService } from '../search/search.service';
 import { requestFromText } from '../search/shopping-request';
+import { TripsService } from '../trips/trips.service';
 import { runTool, RunState, TOOLS } from './assistant.tools';
 
 type Card = NonNullable<ReturnType<DealsService['toCard']>>;
 
 export type ChatTurn = { role: 'user' | 'assistant'; content: string };
-export type ChatResult = { reply: string; deals: Card[]; compareSlugs?: string[] };
+export type TripCard = { id: string; destination: string; startDate: string; endDate: string; total: number; withinBudget: boolean };
+export type ChatResult = { reply: string; deals: Card[]; compareSlugs?: string[]; trip?: TripCard };
 
 const SYSTEM = `You are Vault's deal assistant. You help people in the US find real, publicly advertised deals.
 You only know what your tools return. Rules you always follow:
@@ -26,7 +28,12 @@ You only know what your tools return. Rules you always follow:
 - Never write URLs. The app shows each deal with its verified stores and links.
 - If nothing suitable is found, say you couldn't find a trusted deal yet and offer to set an alert. Do not stretch.
 - If the request is too vague to search (no kind of product), ask one short question instead.
-- Be brief and friendly: 2 to 4 short sentences, then let the deal cards do the talking. No pressure tactics. Prices can change at the store.`;
+- Be brief and friendly: 2 to 4 short sentences, then let the deal cards do the talking. No pressure tactics. Prices can change at the store.
+Trips:
+- When the person wants a trip (a hotel stay, possibly with a flight and a car, for dates), use plan_trip. If it reports missing details (destination, dates, travelers, origin airport), ask for them all in one short question.
+- Quote only the prices and totals plan_trip returned. Totals are computed by Vault, never by you. If the trip is over budget, say so plainly and mention the suggested swap.
+- If a hotel the person named was not found, say so honestly; never present another hotel as that one.
+- Vault never books or pays. Never say anything is booked, reserved, confirmed or paid. The person approves the plan, then finishes each booking on the partner's site. Prices and availability can change on the booking site.`;
 
 const MAX_TURNS = 5;
 const MAX_TOOL_CALLS = 6;
@@ -43,6 +50,7 @@ export class AssistantService {
     private readonly search: SearchService,
     private readonly usage: AiUsageService,
     private readonly prisma: PrismaService,
+    @Optional() private readonly trips?: TripsService,
   ) {}
 
   private get model() {
@@ -110,7 +118,7 @@ export class AssistantService {
         {
           model: this.model,
           max_tokens: MAX_TOKENS,
-          system: SYSTEM,
+          system: `${SYSTEM}\nToday's date is ${new Date().toISOString().slice(0, 10)}.`,
           tools: TOOLS,
           // On the last allowed turn the model must answer in words, not call another tool.
           tool_choice: lastChance ? { type: 'none' } : { type: 'auto' },
@@ -138,7 +146,7 @@ export class AssistantService {
             continue;
           }
           tally.toolCalls++;
-          const out = await runTool(block.name, block.input, this.search, state);
+          const out = await runTool(block.name, block.input, this.search, state, new Date(), this.trips);
           results.push({ type: 'tool_result', tool_use_id: block.id, content: out.content, ...(out.isError ? { is_error: true } : {}) });
         }
         messages.push({ role: 'user', content: results });
@@ -161,13 +169,18 @@ export class AssistantService {
 
     const deals = [...state.shown.values()].slice(0, 4);
     const compare = state.compareSlugs ?? undefined;
+    const t = state.trip;
+    const extra = {
+      ...(compare ? { compareSlugs: compare } : {}),
+      ...(t ? { trip: { id: t.id, destination: t.facts.destination, startDate: t.facts.startDate, endDate: t.facts.endDate, total: t.facts.total, withinBudget: t.facts.withinBudget } } : {}),
+    };
     if (!check.ok) {
       // Either the model said nothing usable, or it quoted something we can't verify: answer from the facts instead.
       const blocked = noUrls !== '' && check.problems[0] !== 'empty';
       if (blocked) this.log.warn(`Blocked an unverified claim: ${check.problems.join(' ')}`);
       // 'limit' = no usable AI answer within the turn, tool-call or time limits, so the plain verified answer was used.
-      return { outcome: (blocked ? 'blocked_claim' : 'limit') as UsageOutcome, result: { reply: plainReply(state.dealFacts), deals, ...(compare ? { compareSlugs: compare } : {}) } };
+      return { outcome: (blocked ? 'blocked_claim' : 'limit') as UsageOutcome, result: { reply: t ? plainTripReply(t.facts) : plainReply(state.dealFacts), deals, ...extra } };
     }
-    return { outcome: (limitHit ? 'limit' : 'ok') as UsageOutcome, result: { reply: noUrls, deals, ...(compare ? { compareSlugs: compare } : {}) } };
+    return { outcome: (limitHit ? 'limit' : 'ok') as UsageOutcome, result: { reply: noUrls, deals, ...extra } };
   }
 }

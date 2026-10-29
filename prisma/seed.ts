@@ -57,6 +57,26 @@ const deals: [string, string, string, number, string | null, boolean, number, [s
     [['target', 47, 'Pick up today', 0], ['walmart', 49, 'Free delivery in 2 days', 1], ['amazon', 52, 'Free delivery in 2 days', 1]]],
 ];
 
+// Trip planner samples (made up, shown under the "samples" notice). Generic names on purpose: no real hotel's name
+// is paired with an invented price. Each price applies to stays/rentals/trips inside the offer's date window.
+// slug, title, category, unit, offers: [merchantSlug, price, cancellation terms (null = the sample source states none)]
+const travel: [string, string, string, string, [string, number, string | null][]][] = [
+  ['miami-oceanfront-resort', 'Oceanfront resort hotel, Miami Beach', 'hotels', 'per night',
+    [['expedia', 189, 'Free cancellation until 3 days before check-in (sample terms)'], ['booking', 194, null]]],
+  ['miami-south-beach-boutique', 'Boutique hotel, South Beach, Miami', 'hotels', 'per night',
+    [['booking', 142, 'Free cancellation until 24 hours before check-in (sample terms)'], ['expedia', 149, null]]],
+  ['miami-downtown-bayfront', 'Bayfront hotel, Downtown Miami', 'hotels', 'per night',
+    [['expedia', 118, null], ['booking', 121, 'Non-refundable (sample terms)']]],
+  ['flight-jfk-mia', 'Round trip, New York (JFK) to Miami (MIA), economy', 'flights', 'per traveler',
+    [['expedia', 238, null], ['booking', 246, null]]],
+  ['flight-ewr-mia', 'Round trip, Newark (EWR) to Miami (MIA), economy', 'flights', 'per traveler',
+    [['booking', 221, null], ['expedia', 229, null]]],
+  ['miami-airport-compact-car', 'Compact car rental, Miami airport (MIA) pickup', 'car-rentals', 'per day',
+    [['expedia', 34, 'Free cancellation (sample terms)'], ['booking', 37, null]]],
+  ['miami-airport-midsize-suv', 'Midsize SUV rental, Miami airport (MIA) pickup', 'car-rentals', 'per day',
+    [['booking', 52, null], ['expedia', 55, null]]],
+];
+
 const DEMO_SOURCE = 'src_demo_seed';
 
 async function main() {
@@ -113,6 +133,27 @@ async function main() {
         return { dealId: deal.id, price, sourceId: DEMO_SOURCE, recordedAt: new Date(Date.now() - (90 - k * 8) * 864e5) };
       });
       await prisma.priceHistory.createMany({ data: pts });
+    }
+  }
+  // Trip planner samples: the date window starts today and runs a year, refreshed on every seed.
+  const windowStart = new Date(new Date().toISOString().slice(0, 10));
+  const windowEnd = new Date(windowStart.getTime() + 365 * 864e5);
+  for (const [slug, title, cat, unit, offers] of travel) {
+    const category = await prisma.category.findUniqueOrThrow({ where: { slug: cat } });
+    const best = Math.min(...offers.map((o) => o[1]));
+    const deal = await prisma.deal.upsert({
+      where: { slug },
+      update: { expiresAt: null },
+      create: { slug, title, categoryId: category.id, originalPrice: best, bestPrice: best, priceUnit: unit, discountPct: 0 },
+    });
+    for (const [m, price, cancellationText] of offers) {
+      const merchant = await prisma.merchant.findUniqueOrThrow({ where: { slug: m } });
+      const dates = { startDate: windowStart, endDate: windowEnd, cancellationText, lastCheckedAt: new Date() };
+      await prisma.offer.upsert({
+        where: { dealId_merchantId: { dealId: deal.id, merchantId: merchant.id } },
+        update: { price, sourceId: DEMO_SOURCE, ...dates },
+        create: { dealId: deal.id, merchantId: merchant.id, price, url: urlFor[m](title), sourceId: DEMO_SOURCE, ...dates },
+      });
     }
   }
   // Lets the website show a "sample prices" notice while this demo catalog is live.

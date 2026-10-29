@@ -135,6 +135,18 @@ export default function Home() {
           </Suspense>
         </section>
 
+        <section className="section">
+          <div className="trip-band">
+            <div>
+              <h2>Planning a trip?</h2>
+              <p>Hotel, flight and car from verified stores, totaled against your budget. You approve the plan, then book on the partner&apos;s site.</p>
+            </div>
+            <Link className="btn primary" href="/trip">
+              Plan a trip
+            </Link>
+          </div>
+        </section>
+
         <GoldPlans />
 
         <section className="band">

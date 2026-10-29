@@ -1,5 +1,6 @@
 import type { DealFacts } from '../search/facts';
 import type { Comparison } from '../search/compare';
+import type { TripFacts } from '../trips/trip-facts';
 
 /**
  * The assistant may only state prices, percentages and store names that appear in what its tools returned (or that the
@@ -56,8 +57,37 @@ export function addComparison(f: FactSet, c: Comparison) {
   for (const a of prices) for (const b of prices) if (a > b) f.amounts.push(a - b);
 }
 
+/** Adds a trip plan's facts: every store's unit price and stay total, the plan total, budget figures and the suggested swap. */
+export function addTrip(f: FactSet, t: TripFacts) {
+  for (const part of t.parts) {
+    for (const s of part.stores) {
+      f.amounts.push(s.unitPrice, s.totalForTrip);
+      f.stores.add(s.store);
+    }
+    const prices = part.stores.map((s) => s.unitPrice);
+    for (const a of prices) for (const b of prices) if (a > b) f.amounts.push(a - b);
+    if (!f.deals.some((x) => x.title === part.title)) f.deals.push({ title: part.title, brand: null, tokens: wordsOf(part.title), stores: new Set(part.stores.map((s) => s.store)) });
+  }
+  f.amounts.push(t.total);
+  if (t.budget) f.amounts.push(t.budget.limit, t.budget.remaining, t.budget.over);
+  if (t.suggestedSwap) f.amounts.push(t.suggestedSwap.saves, t.suggestedSwap.totalAfter);
+}
+
+/**
+ * Vault never books or pays: the shopper finishes each booking on the partner's site. A reply that says something was
+ * booked, reserved, paid for or confirmed is false by definition.
+ */
+const BOOKED = [
+  /\b(?:i|we|vault)(?:\s+have|\s+has|'ve)?\s+(?:already\s+|just\s+)?(?:booked|reserved|paid(?: for)?|purchased|bought)\b/i,
+  /\b(?:is|are|was|were|been|now|all)\s+(?:now\s+|all\s+)?(?:booked|reserved|paid for)\b/i,
+  /\b(?:booking|reservation)s?\s+(?:is\s+|are\s+|has been\s+|have been\s+)?confirmed\b/i,
+  /\byou(?:'re| are)\s+(?:all\s+)?(?:booked|set to go)\b/i,
+  /\bconfirmation (?:number|code|email)\b/i,
+];
+export const bookingClaims = (reply: string) => (BOOKED.some((r) => r.test(reply)) ? ['Vault never books or pays, so it must not say anything is booked.'] : []);
+
 export function checkReply(reply: string, facts: FactSet, knownStores: string[], userText: string): { ok: boolean; problems: string[] } {
-  const problems: string[] = [];
+  const problems: string[] = [...bookingClaims(reply)];
   const userAmounts = [...amountsIn(userText), ...budgetAmountsIn(userText)];
   const userPercents = percentsIn(userText);
 
@@ -88,6 +118,16 @@ export function checkReply(reply: string, facts: FactSet, knownStores: string[],
 /** Title words that identify one deal among the ones returned (shared words like "wireless" can't). */
 function uniqueTokens(d: DealRef, all: DealRef[]) {
   return d.tokens.filter((t) => all.filter((o) => o.tokens.includes(t)).length === 1);
+}
+
+/** A plain, fully verified answer about a trip plan, built only from its facts. */
+const usd = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
+
+export function plainTripReply(t: TripFacts): string {
+  const budget = t.budget ? (t.withinBudget ? ` That is ${usd(t.total)} of your ${usd(t.budget.limit)} budget.` : ` That is ${usd(t.budget.over)} over your ${usd(t.budget.limit)} budget; the plan suggests a cheaper swap.`) : '';
+  const missing = t.missingParts.length ? ` I couldn't find a verified ${t.missingParts.join(' or ')} for these dates.` : '';
+  const named = t.namedHotel && !t.namedHotel.found ? ` I couldn't find ${t.namedHotel.name} at a verified store, so I included other hotels.` : '';
+  return `I put together a trip plan for ${t.destination}, ${t.startDate} to ${t.endDate}: ${usd(t.total)} in total.${budget}${named}${missing} Review it and approve it, then finish each booking on the partner's site. Prices and availability can change on the booking site.`;
 }
 
 /** A plain, fully verified answer built only from the facts. */

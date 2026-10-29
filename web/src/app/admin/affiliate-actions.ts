@@ -50,6 +50,8 @@ export async function saveProgram(id: string, _: ActionState, f: FormData): Prom
         linkTemplate: str(f, "linkTemplate"),
         allowedTrackingHosts: str(f, "allowedTrackingHosts").split(/[\s,]+/).filter(Boolean),
         disclosureText: str(f, "disclosureText") || undefined,
+        bookingLinkTemplate: str(f, "bookingLinkTemplate"),
+        bookingLinkDocUrl: str(f, "bookingLinkDocUrl"),
         commissionNotes: str(f, "commissionNotes") || undefined,
         applicationUrl: str(f, "applicationUrl") || undefined,
         notes: str(f, "notes") || undefined,

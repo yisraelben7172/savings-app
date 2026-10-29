@@ -462,3 +462,35 @@ h2, .h2 { font: 700 30px/1.15 var(--display); letter-spacing: -.025em; }
 .sp-notice { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 12px; padding: 12px 14px; }
 .sp-approved { border: 1px solid color-mix(in srgb, var(--save) 40%, var(--line)); background: var(--save-bg); border-radius: 12px; padding: 14px 16px; color: var(--ink); line-height: 1.55; }
 .sp-fine { max-width: 720px; }
+
+/* ---------- Trip planner ---------- */
+.tp-fields { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.tp-wide { flex: 1 1 260px; } .tp-wide input { width: 100%; }
+.tp-num input { width: 80px; }
+.tp-checks { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; font-size: 15px; }
+.tp-checks > label:not(.sp-field) { display: inline-flex; gap: 8px; align-items: center; min-height: 44px; }
+.tp-checks input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--cobalt); }
+.tp-sub { color: var(--ink-2); font-size: 16px; margin-top: -12px; }
+.tp-main { min-width: 0; }
+.tp-badge { display: inline-block; margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--save); background: var(--save-bg); border-radius: 999px; padding: 2px 10px; vertical-align: 2px; }
+.tp-stores { display: grid; gap: 8px; margin-top: 6px; }
+.tp-stores li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.tp-stores li.on { border-color: color-mix(in srgb, var(--cobalt) 55%, var(--line)); background: color-mix(in srgb, var(--cobalt) 5%, var(--card)); }
+.tp-stores li > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.tp-stores .btn { height: 36px; padding: 0 12px; font-size: 14px; }
+.tp-price { display: grid; justify-items: end; font-variant-numeric: tabular-nums; }
+.tp-price b { font: 700 17px/1.2 var(--display); }
+.tp-price small { color: var(--muted); font-size: 13px; }
+.tp-chosen { font-size: 14px; font-weight: 600; color: var(--cobalt); }
+@media (max-width: 560px) { .tp-stores li { grid-template-columns: minmax(0, 1fr) auto; } .tp-stores li > :last-child:not(.tp-price) { grid-column: 1 / -1; } }
+.tp-swap { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 15px; line-height: 1.5; }
+.tp-book .btn.primary { justify-self: start; }
+.tp-details { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
+.tp-details code { font: 500 14px var(--body); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; overflow-wrap: anywhere; }
+.tp-details .btn { height: 36px; padding: 0 12px; font-size: 14px; }
+.tp-report { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 14px; }
+.tp-report .btn { height: 36px; padding: 0 12px; font-size: 14px; }
+.tp-card { display: grid; gap: 4px; text-align: left; }
+.trip-band { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 20px; padding: 24px; background: var(--surface); }
+.trip-band h2 { font: 700 24px/1.2 var(--display); letter-spacing: -.02em; }
+.trip-band p { color: var(--ink-2); margin-top: 6px; max-width: 560px; line-height: 1.55; }

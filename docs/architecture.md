@@ -53,6 +53,8 @@ The brief suggests `lib/ai`, `lib/catalog`, `lib/retailers`, `lib/affiliate`... 
 
 - **Affiliate (2026-10-25)**: `AffiliateProgram` (per store and network), `Click` (outcome, program, host, placement), `Commission` (what a network reported, status kept separate), `CommissionImport` (every report upload).
 
+- **Travel (2026-10-29)**: `TripPlan` (destination, dates, travelers, optional origin airport and budget, status DRAFT/READY/APPROVED/EXPIRED/CANCELLED, 7-day expiry, no personal data) and `TripItem` (one candidate hotel/flight/car with its store options, the chosen offer, unit price, quantity and code-computed total). Travel prices stay on `Offer`, which gained `startDate`/`endDate` (the dates the price applies to) and `cancellationText` (only when the source states it). `AffiliateProgram` gained `bookingLinkTemplate` + `bookingLinkDocUrl` (a documented pre-filled booking link format, see below).
+
 Gaps against the brief (see the roadmap): no audit log, no agent runs, no importers beyond CSV feeds, no network report APIs.
 
 ## Search, comparison and the AI assistant (`src/search`, `src/ai`, `src/assistant`)
@@ -96,6 +98,36 @@ POST /api/plans/:id/cancel       stops a running plan or withdraws a ready one (
 - Approval does not buy anything. Vault never sells; shoppers open each deal's store picker and go to the store.
 - No model call is involved today. An AI-written plan (the assistant proposing the item list) is a later step; it would have to go through `parsePlanInput` like any other input.
 - No accounts yet: a plan is reachable only by its random link and holds no personal data (see the privacy page).
+
+## Trip plans (`src/trips`, Step 1: AI plans, the shopper approves, partner sites book)
+
+Owner decision 2026-10-29 (spec: `docs/trip-planner-spec.md`). Vault plans the trip; the shopper approves; the booking and payment happen on the partner's site. Step 2 (booking and payment inside Vault) is out of scope: it needs booking APIs, payment handling, Seller of Travel registration and a travel lawyer first.
+
+```
+ assistant tool plan_trip ─┐   (AI output is untrusted: same validation as the website)
+ /trip form ───────────────┴► POST /api/trips ──► parseTripInput (dates real and in the future, ≤ 30 nights, ≤ 365 days ahead,
+                                                  adults 1-9, children 0-8, 3-letter airport only with a flight, budget > 0)
+                                                  missing details ⇒ 400 with `missing` (the assistant asks one question)
+                              TripsService: one search per part with the shopping SearchService + ranking (commission-blind), plus
+                              a travel filter: only offers whose date window covers the whole stay (undated offers never qualify)
+                              trip-planner.ts (pure): pick + up to 2 alternatives per part; the named hotel only on an exact word
+                              match (else an honest "couldn't find" note); cheapest store first; totals in integer cents
+                              ──► TripPlan READY + TripItem rows
+ GET  /api/trips/:id                          plan, totals vs budget, the "cheapest swap" suggestion when over budget
+ POST /api/trips/:id/items/:itemId/select     {offerId, version}: another store, or an alternative of the same part
+ POST /api/trips/:id/approve                  {version}: every chosen price re-checked (trust gate + date window). Changed or
+                                              gone ⇒ plan updated, NOT approved (409 + changes). Unchanged ⇒ APPROVED.
+ POST /api/trips/:id/cancel                   withdraws a ready or approved plan
+ POST /api/trips/:id/items/:itemId/report     optional "did you complete this booking?" {booked: true|false}; stores yes/no only
+```
+
+- Quantities: hotel = nights (one room), car = rental days, flight = travelers (adults + children, one round trip each). Totals are unit price x quantity, computed in code; the model never computes money.
+- Over budget is shown, never hidden: no part is dropped or swapped automatically. The plan suggests the single cheapest swap (the change that lowers the total most) and the shopper decides.
+- Approval only unlocks the booking buttons, in order flight, hotel, car. Each goes through `/api/go/:offerId?src=web-trip&rec=<plan>&trip=<plan>&item=<item>` so the click is logged like any other. Copy: "Finish booking on <store>", never "booked".
+- Pre-filled links: `/go` adds dates/guests/airport only when the store's program has a saved `bookingLinkTemplate` with a `bookingLinkDocUrl` (where the partner documents that format), only for the offer the shopper approved, using the dates stored on the plan, and only if the result is https on the store's own domain. There is no built-in format for any partner. Otherwise the shopper lands on the item's page and the plan shows the details to enter with a copy button.
+- AI: the `plan_trip` tool calls the same service with `aiOnly` (only sources that allow AI use). The model sees `tripFacts` only: titles, store names, unit prices, totals, stated cancellation terms, budget figures; no ids, links or commercial data. Every price/store in its reply passes the claim checker (`addTrip`), and any "booked/reserved/paid/confirmed" claim is blocked (`bookingClaims`); a blocked reply is replaced by `plainTripReply`. The chat shows a "View your trip plan" card.
+- Commission-blind: `trip-planner.ts`, `trip-input.ts`, `trip-facts.ts` and `trips.service.ts` never read affiliate data (a test greps them). Only `booking-links.service.ts` reads programs, to show required disclosures and to know whether a documented format exists.
+- Data: until a travel network feed with a permission record exists, the travel listings are labeled demo data in `prisma/seed.ts` (generic hotel names, so no real hotel is paired with an invented price), shown under the "samples" notice.
 
 ## Affiliate links (`src/affiliate`, `src/clicks`)
 

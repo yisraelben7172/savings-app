@@ -211,25 +211,31 @@ model Deal {
 
 // One store's price for a deal (the "choose where to buy" rows)
 model Offer {
-  id            String      @id @default(cuid())
-  dealId        String
-  deal          Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  merchantId    String
-  merchant      Merchant    @relation(fields: [merchantId], references: [id])
-  price         Decimal     @db.Decimal(12, 2) // what the shopper pays now (sale price if on sale)
-  listPrice     Decimal?    @db.Decimal(12, 2) // the source's "was"/list price, only if the source provides it
-  currency      String      @default("USD")
-  url           String // product page at the merchant
-  deliveryNote  String?
-  speedRank     Int         @default(5) // 0 = fastest
-  inStock       Boolean     @default(true)
-  condition     String      @default("new") // new | refurbished | used
-  lastCheckedAt DateTime    @default(now()) // when the source last confirmed this price
-  staleAfter    DateTime? // after this the price is not shown as current (null = no expiry, demo only)
-  sourceId      String?
-  source        DataSource? @relation(fields: [sourceId], references: [id])
-  retailerSku   String? // the retailer's own product ID from the source
-  clicks        Click[]
+  id               String      @id @default(cuid())
+  dealId           String
+  deal             Deal        @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  merchantId       String
+  merchant         Merchant    @relation(fields: [merchantId], references: [id])
+  price            Decimal     @db.Decimal(12, 2) // what the shopper pays now (sale price if on sale)
+  listPrice        Decimal?    @db.Decimal(12, 2) // the source's "was"/list price, only if the source provides it
+  currency         String      @default("USD")
+  url              String // product page at the merchant
+  deliveryNote     String?
+  speedRank        Int         @default(5) // 0 = fastest
+  inStock          Boolean     @default(true)
+  condition        String      @default("new") // new | refurbished | used
+  lastCheckedAt    DateTime    @default(now()) // when the source last confirmed this price
+  staleAfter       DateTime? // after this the price is not shown as current (null = no expiry, demo only)
+  sourceId         String?
+  source           DataSource? @relation(fields: [sourceId], references: [id])
+  retailerSku      String? // the retailer's own product ID from the source
+  // Travel only: the dates this price applies to (hotel check-in/check-out, car pickup/drop-off, flight out/back).
+  // A trip uses the offer only when its dates fall inside this window. Null for products.
+  startDate        DateTime?
+  endDate          DateTime?
+  cancellationText String? // only when the source states its cancellation terms; never written by us
+  clicks           Click[]
+  tripItems        TripItem[]
 
   @@unique([dealId, merchantId])
   @@unique([sourceId, retailerSku])
@@ -293,6 +299,10 @@ model AffiliateProgram {
   linkTemplate         String? // DEEPLINK_TEMPLATE: exact URL from the network, with {url}/{urlEncoded} and {clickId} placeholders
   allowedTrackingHosts String[]           @default([]) // hosts the template may point at (e.g. "goto.example-network.com")
   disclosureText       String? // wording the program requires next to its links
+  // Travel: a pre-filled booking link format (dates, guests, airport), ONLY as documented by the partner or shown in the
+  // network dashboard. bookingLinkDocUrl records where it is documented; without both, shoppers enter dates themselves.
+  bookingLinkTemplate  String?
+  bookingLinkDocUrl    String?
   commissionNotes      String? // verified terms only
   applicationUrl       String?
   appliedAt            DateTime?
@@ -447,11 +457,11 @@ model AiUsage {
 // A plan is a multi-item shopping list with budgets. It is found by its random id (no accounts yet), holds no personal
 // data, and expires. Statuses: RUNNING | READY | APPROVED | CANCELLED | FAILED.
 model ShoppingPlan {
-  id         String    @id // 32 random hex characters, not guessable
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id         String     @id // 32 random hex characters, not guessable
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
   status     String
-  version    Int       @default(1) // bumps whenever the picks or prices change; approval must name the version the shopper saw
+  version    Int        @default(1) // bumps whenever the picks or prices change; approval must name the version the shopper saw
   input      Json
   result     Json?
   error      String? // short error class, never message content
@@ -583,4 +593,72 @@ model Suppression {
 model Setting {
   key   String @id
   value String
+}
+
+enum TripStatus {
+  DRAFT // being built
+  READY // waiting for the shopper to review and approve
+  APPROVED // prices re-checked and approved: booking buttons unlocked (Vault never books or pays)
+  EXPIRED
+  CANCELLED
+}
+
+enum TripItemKind {
+  HOTEL
+  FLIGHT
+  CAR
+}
+
+// A trip plan (hotel, optional flight, optional car). Reachable only by its random id; holds no personal data.
+model TripPlan {
+  id            String     @id // 32 random hex characters
+  status        TripStatus @default(DRAFT)
+  version       Int        @default(1)
+  destination   String
+  startDate     DateTime // check-in / pickup / outbound date (UTC midnight)
+  endDate       DateTime // check-out / drop-off / return date (UTC midnight)
+  adults        Int
+  children      Int        @default(0)
+  originAirport String? // 3-letter airport code, only when a flight is wanted
+  budgetUsd     Decimal?   @db.Decimal(12, 2)
+  hotelName     String? // a hotel the shopper asked for by name
+  wants         String[]   @default([]) // HOTEL, FLIGHT, CAR
+  notes         String[]   @default([])
+  approvedAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  expiresAt     DateTime
+  items         TripItem[]
+
+  @@index([status, createdAt])
+  @@index([expiresAt])
+}
+
+// One candidate for one part of the trip (a hotel, a flight, a car). Several per kind; `selected` marks the one in the plan.
+model TripItem {
+  id               String       @id @default(cuid())
+  planId           String
+  plan             TripPlan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  kind             TripItemKind
+  dealSlug         String
+  title            String
+  namedMatch       Boolean      @default(false) // this is the hotel the shopper asked for by name
+  selected         Boolean      @default(false)
+  offerIds         String[] // store options, cheapest first
+  storeOptions     Json // [{ offerId, store, storeSlug, unitPrice, cancellationText, priceCheckedAt }]
+  chosenOfferId    String?
+  chosenOffer      Offer?       @relation(fields: [chosenOfferId], references: [id], onDelete: SetNull)
+  unitPrice        Decimal?     @db.Decimal(12, 2)
+  unitLabel        String // night, day or trip (one round trip per traveler)
+  quantity         Int // nights, rental days or travelers
+  totalPrice       Decimal?     @db.Decimal(12, 2) // unitPrice x quantity, computed in code
+  cancellationText String?
+  priceCheckedAt   DateTime?
+  available        Boolean      @default(true) // false once a re-check finds no trusted price
+  position         Int
+  selfReport       String? // optional "did you complete this booking?": yes | no (no personal data)
+  createdAt        DateTime     @default(now())
+
+  @@index([planId, position])
+  @@index([chosenOfferId])
 }

@@ -12,8 +12,24 @@ import { queryTerms, type ShoppingRequest } from './shopping-request';
 const CANDIDATE_LIMIT = 300;
 const MAX_COMPARE = 5;
 
-export type SearchOptions = { tier?: Tier; /** only offers whose source allows AI use */ aiOnly?: boolean; now?: Date };
-export type SearchResult = { card: NonNullable<ReturnType<DealsService['toCard']>>; ranked: Ranked };
+export type SearchOptions = {
+  tier?: Tier;
+  /** only offers whose source allows AI use */
+  aiOnly?: boolean;
+  now?: Date;
+  /** travel: only offers whose stated date window covers this whole stay/rental/trip (undated offers never qualify) */
+  travel?: { start: Date; end: Date };
+};
+/** One store's offer behind a result, for features that need to point at a specific offer (trip plans). Facts only. */
+export type ResultOffer = { id: string; store: string; storeSlug: string; price: number; cancellationText: string | null; lastCheckedAt: Date };
+export type SearchResult = { card: NonNullable<ReturnType<DealsService['toCard']>>; ranked: Ranked; offers: ResultOffer[] };
+
+/** The offer filter for a search: the trust gate (or the AI permission gate), plus the travel date window if asked. */
+export function offerFilterFor(opts: SearchOptions, now: Date): Prisma.OfferWhereInput {
+  const base = opts.aiOnly ? aiAllowedOffer(now) : trustedOffer(now);
+  if (!opts.travel) return base;
+  return { ...base, AND: [...(base.AND as Prisma.OfferWhereInput[]), { startDate: { lte: opts.travel.start } }, { endDate: { gte: opts.travel.end } }] };
+}
 
 function flatten(attrs: unknown): Record<string, string> {
   if (!attrs || typeof attrs !== 'object' || Array.isArray(attrs)) return {};
@@ -34,7 +50,7 @@ export class SearchService {
 
   async search(req: ShoppingRequest, opts: SearchOptions = {}): Promise<SearchResult[]> {
     const now = opts.now ?? new Date();
-    const offerFilter = opts.aiOnly ? aiAllowedOffer(now) : trustedOffer(now);
+    const offerFilter = offerFilterFor(opts, now);
     const and: Prisma.DealWhereInput[] = [dealVisibility(opts.tier ?? 'free', offerFilter, now)];
     if (req.category) and.push({ category: { slug: req.category } });
 
@@ -87,7 +103,10 @@ export class SearchService {
     for (const ranked of rankCandidates(candidates, req, now)) {
       const deal = byDeal.get(ranked.candidate.slug)!;
       const card = this.deals.toCard({ ...deal, offers: deal.offers.map((o) => ({ id: o.id, price: o.price, listPrice: o.listPrice })) });
-      if (card) out.push({ card, ranked });
+      if (card) {
+        const offers = deal.offers.map((o) => ({ id: o.id, store: o.merchant.name, storeSlug: o.merchant.slug, price: Number(o.price), cancellationText: o.cancellationText, lastCheckedAt: o.lastCheckedAt }));
+        out.push({ card, ranked, offers });
+      }
     }
     return out;
   }
